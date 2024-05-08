@@ -92,13 +92,13 @@ str(merged_list$FPED_IND)
 
 \--\> convert the different equivalents into grams to score the PHDI
 
-+---------------+----------------------------------------+
-| 1 oz          | 28.349523125 g                         |
-|               |                                        |
-| 1 CUP         | dependent on the consistency / density |
-|               |                                        |
-| 1 tbsp        | dependent on the consistency / density |
-+---------------+----------------------------------------+
++--------+----------------------------------------+
+| 1 oz   | 28.349523125 g                         |
+|        |                                        |
+| 1 CUP  | dependent on the consistency / density |
+|        |                                        |
+| 1 tbsp | dependent on the consistency / density |
++--------+----------------------------------------+
 
 **FPED_IND** = for every individual participant, there is an entry for every food component they have eaten that day
 
@@ -650,29 +650,29 @@ print(subsetted_list)
     )
   }
   
-#here again we need to calrify that the varibales are in the merged_list$FPED
- 
-
-#Adequacy components   
-  PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Legumes = SCORE_ADEQUACY(DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Fruits = SCORE_ADEQUACY(DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
-  PHDI_NS_Veggies = SCORE_ADEQUACY(DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Whole_Grains = SCORE_ADEQUACY(DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
-#Optimum components  
-  PHDI_Seafood_Sub = SCORE_OPTIMUM(DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Starchy_Veggies = SCORE_OPTIMUM(DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Dairy = SCORE_OPTIMUM(DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Unsaturated_Oils = SCORE_OPTIMUM(DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
-#Ratio components
-  PHDI_DGV_Ratio = SCORE_RATIO(DR1T_V_DRKGR_GRAM, DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
-  PHDI_ReV_Ratio = SCORE_RATIO(DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_DRKGR_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
-#Moderation compnents
-  PHDI_Eggs = SCORE_MODERATION(DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Red_Proc_Meat = SCORE_MODERATION(DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Poultry = SCORE_MODERATION(DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Saturated_Fats = SCORE_MODERATION(DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Added_Sugars = SCORE_MODERATION(DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
+#here again we need to clarify that the variables are in the merged_list$FPED
+  
+  
+  #Adequacy components   
+    PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Legumes = SCORE_ADEQUACY(DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Fruits = SCORE_ADEQUACY(DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
+    PHDI_NS_Veggies = SCORE_ADEQUACY(DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Whole_Grains = SCORE_ADEQUACY(DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
+  #Optimum components  
+    PHDI_Seafood_Sub = SCORE_OPTIMUM(DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Starchy_Veggies = SCORE_OPTIMUM(DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Dairy = SCORE_OPTIMUM(DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Unsaturated_Oils = SCORE_OPTIMUM(DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
+  #Ratio components
+    PHDI_DGV_Ratio = SCORE_RATIO(DR1T_V_DRKGR_GRAM, DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+    PHDI_ReV_Ratio = SCORE_RATIO(DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_DRKGR_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+  #Moderation compnents
+    PHDI_Eggs = SCORE_MODERATION(DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Red_Proc_Meat = SCORE_MODERATION(DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Poultry = SCORE_MODERATION(DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Saturated_Fats = SCORE_MODERATION(DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
+    PHDI_Added_Sugars = SCORE_MODERATION(DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
   
 # the PHDI for every individual for day 1
 PHDI_all_D1 = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_NS_Veggies+PHDI_Whole_Grains+PHDI_Seafood_Sub+PHDI_Starchy_Veggies+PHDI_Dairy+PHDI_Unsaturated_Oils+PHDI_DGV_Ratio+PHDI_ReV_Ratio+PHDI_Eggs+PHDI_Red_Proc_Meat+PHDI_Poultry+PHDI_Saturated_Fats+PHDI_Added_Sugars
