@@ -1,0 +1,683 @@
+---
+qu---
+title: "Merging_datasets"
+author: "Laura Schirlo"
+date: "2024-03-28"
+output: pdf_document
+---
+
+# Dummy example
+
+## Merging labratory data to the existing NHANES2005_2006 dataset from the dietaryindex package
+
+### Loading the dataset from 2005/2006 into R from the dietaryindex package
+
+```{r}
+library(dietaryindex)
+library(emmeans)
+library(devtools)
+library(dplyr)
+library(haven)
+library(readr)
+library(foreign)
+setwd("~/Desktop/Master_thesis/NHANES_combined_GitHub")
+load("~/Desktop/Master_thesis/NHANES_combined_GitHub/NHANES_20052006.rda")
+
+```
+
+### Loading the laboratory dataset from 2005/2006 into R from the NHANES website
+
+```{r}
+TRYGL <- read.xport("~/Desktop/Master_thesis/NHANES_website_data/2005_2006/TRYGL_LDL_APO.XPT")
+CHOL <- read.xport("~/Desktop/Master_thesis/NHANES_website_data/2005_2006/TOT_CHOLESTEROL.XPT")
+Food_code <- read.xport("~/Desktop/Master_thesis/NHANES_website_data/2005_2006/Food_Code.XPT")
+Modification_code <- read.xport("~/Desktop/Master_thesis/NHANES_website_data/2005_2006/Modification_Code.XPT")
+```
+
+### Merging the two datasets and renaming them
+
+```{r}
+merged_list <- c(NHANES_20052006, list(TRYGL))
+names(merged_list)[length(merged_list)] <- "LAB_Trygli"
+merged_list <- c(merged_list, list(CHOL))
+names(merged_list)[length(merged_list)] <- "LAB_Cholesterol"
+```
+
+### Adding the labels to the Laboratory data
+
+```{r}
+
+str(merged_list$LAB_Trygli)
+
+attr(merged_list$LAB_Trygli$SEQN, "label") <- "Respondent Sequence number" 
+attr(merged_list$LAB_Trygli$WTSAF2YR, "label") <- "Fasting Subsample 2 year MEC Weight" 
+attr(merged_list$LAB_Trygli$LBXTR, "label") <- "Triglyceride mg/dL" 
+attr(merged_list$LAB_Trygli$LBDTRSI, "label") <- "Triglyceride nmol/L" 
+attr(merged_list$LAB_Trygli$LBDLDL, "label") <- "LDL-Cholesterol mg/dL" 
+attr(merged_list$LAB_Trygli$LBDLDLSI, "label") <- "LDL-Cholesterol nmol/L" 
+attr(merged_list$LAB_Trygli$LBXAPB, "label") <- "Apolipoprotein mg/dL" 
+attr(merged_list$LAB_Trygli$LBDAPBSI, "label") <- "Apolipoprotein g/L" 
+
+str(merged_list$LAB_Cholesterol)
+attr(merged_list$LAB_Cholesterol$SEQN, "label") <- "Respondent Sequence number" 
+attr(merged_list$LAB_Cholesterol$LBXTC, "label") <- "Total Cholesterol (mg/dL)" 
+attr(merged_list$LAB_Cholesterol$LBDTCSI, "label") <- "Total Cholesterol (mmol/L)" 
+```
+
+## Getting to know the data
+
+### What are the labels?
+
+```{r}
+str(merged_list$FPED)
+str(merged_list$NUTRIENT)
+
+str(merged_list$NUTRIENT_IND)
+str(merged_list$FPED_IND)
+
+
+```
+
+**Nutrient**:
+
+-   ***For each participant***, daily total energy and nutrient intakes from foods and beverages and whether the amount of food consumed was usual, much more than usual, or much less than usual are included in the ***Total Nutrient Intakes files***
+
+-   a lot of data about fish consumption, information about total kcals as well as protein / carbohydrates / total sugars / dietary fiber / total fat / different fats / Cholesterol /...
+
+**FPED**: = Food Patterns Equivalents Database
+
+-   How much was eaten by one participant on one day, equivalents are often in cups or oz and some in grams and tbsps!
+
+-   number of foods reported
+
+\--\> convert the different equivalents into grams to score the PHDI
+
++---------------+----------------------------------------+
+| 1 oz          | 28.349523125 g                         |
+|               |                                        |
+| 1 CUP         | dependent on the consistency / density |
+|               |                                        |
+| 1 tbsp        | dependent on the consistency / density |
++---------------+----------------------------------------+
+
+**FPED_IND** = for every individual participant, there is an entry for every food component they have eaten that day
+
+-   there are many entries per individual for every food component they have consumed
+
+-   the description of what that type of food is analyzed, can be seen here: merged_list\$FPED_IND\$DESCRIPTION or in the Food_Code dataset
+
+### Descriptive analyses
+
+```{r}
+summary(merged_list$DEMO$RIDAGEYR, na.rm = T)
+#the mean age in the cohort is 27.9, the median is 19 --> rather young
+# --> some of them are 0 years old... exclusion?
+summary(merged_list$NUTRIENT$DR1TKCAL, na.rm = T)
+#mean kcal they consumed is 2027.3
+sum(merged_list$NUTRIENT$DR1TKCAL >= 10000, na.rm = T)
+sum(merged_list$NUTRIENT$DR1TKCAL <= 100, na.rm = T)
+# -->some ate more than 10000kcal and some less than 100, exlcusion?
+
+
+num_males <- sum(merged_list$DEMO$RIAGENDR == 1, na.rm = TRUE)
+num_females <- sum(merged_list$DEMO$RIAGENDR == 2, na.rm = TRUE)
+total_individuals <- num_males + num_females
+total_individuals
+#total individuals are 10'348
+
+(num_males / total_individuals) * 100
+percentage_females <- (num_females / total_individuals) * 100
+#the percentages are very equal: f = 50.90 / m = 49.09
+
+sum(merged_list$DEMO$RIDRETH1 == 1) #2847 of the people are Mexican-American
+sum(merged_list$DEMO$RIDRETH1 == 2) #349 are other Hispanics
+sum(merged_list$DEMO$RIDRETH1 == 3) #3928 are Non-Hispanic white
+sum(merged_list$DEMO$RIDRETH1 == 4) #2710 are Non-Hispanic black
+sum(merged_list$DEMO$RIDRETH1 == 5) #514 are Other race - including multi-race
+#not evenly distributed, therefore we use the weights!
+
+
+sum(merged_list$DEMO$RIDEXPRG ==1, na.rm = T) #382 are pregenant (lab or self-reported)
+sum(is.na(merged_list$DEMO$RIDEXPRG)) #there are 6975 missing values !!!
+
+
+hist(merged_list$NUTRIENT$DR1TKCAL) #pretty skewed, but the outcome is PHDI
+```
+
+## Changing some variables to grams
+
+### [Ounces](https://www.nist.gov/pml/owm/approximate-conversions-us-customary-measures-metric) in grams
+
+```{r}
+str(merged_list$FPED)
+#there are some variables in ounces --> can be converted into gram by mulitplying with 28.35
+# https://www.nist.gov/pml/owm/approximate-conversions-us-customary-measures-metric
+
+#function to convert the ounces in grams
+
+ounces_to_gram_conversion <- function(ounces){
+  grams <- ounces * 28.35
+  return(grams)
+}
+
+#DR1T_G_WHOLE_GRAM
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_WHOLE_GRAM = ounces_to_gram_conversion(DR1T_G_WHOLE))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_WHOLE_GRAM, .after = DR1T_G_WHOLE)
+attr(merged_list$FPED$DR1T_G_WHOLE_GRAM, "label") <- "Whole grains (grams)"  
+
+#DR1T_G_REFINED
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_REFINED_GRAM = ounces_to_gram_conversion(DR1T_G_REFINED))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_REFINED_GRAM, .after = DR1T_G_REFINED)
+attr(merged_list$FPED$DR1T_G_REFINED_GRAM, "label") <- "Refined or non-whole grains (grams)"
+
+#DR1T_G_TOTAL
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_TOTAL_GRAM = ounces_to_gram_conversion(DR1T_G_TOTAL))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_TOTAL_GRAM, .after = DR1T_G_TOTAL)
+attr(merged_list$FPED$DR1T_G_TOTAL_GRAM, "label") <- "Total whole and refined grains (grams)"  
+
+
+#DR1T_PF_MEAT
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_MEAT_GRAM = ounces_to_gram_conversion(DR1T_PF_MEAT))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_MEAT_GRAM, .after = DR1T_PF_MEAT)
+attr(merged_list$FPED$DR1T_PF_MEAT_GRAM, "label") <- "Beef, veal, pork, lamb, game meat; excludes organ meats and cured meat (grams)" 
+
+#DR1T_PF_CUREDMEAT 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_CUREDMEAT_GRAM  = ounces_to_gram_conversion(DR1T_PF_CUREDMEAT ))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_CUREDMEAT_GRAM, .after = DR1T_PF_CUREDMEAT )
+attr(merged_list$FPED$DR1T_PF_CUREDMEAT_GRAM, "label") <- "Cured/luncheon meat made from beef, pork, or poultry (grams)" 
+
+#DR1T_PF_ORGAN 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_ORGAN_GRAM  = ounces_to_gram_conversion(DR1T_PF_ORGAN))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_ORGAN_GRAM, .after = DR1T_PF_ORGAN  )
+attr(merged_list$FPED$DR1T_PF_ORGAN_GRAM, "label") <- "Organ meat from beef, veal, pork, lamb, game, and poultry (grams)" 
+
+#DR1T_PF_POULT 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_POULT_GRAM  = ounces_to_gram_conversion(DR1T_PF_POULT))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_POULT_GRAM, .after = DR1T_PF_POULT)
+attr(merged_list$FPED$DR1T_PF_POULT_GRAM, "label") <- "Chicken, turkey, Cornish hens, and game birds; excludes organ meats and cured meat (grams)" 
+
+#DR1T_PF_SEAFD_HI
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SEAFD_HI_GRAM  = ounces_to_gram_conversion(DR1T_PF_SEAFD_HI))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SEAFD_HI_GRAM, .after = DR1T_PF_SEAFD_HI)
+attr(merged_list$FPED$DR1T_PF_SEAFD_HI_GRAM, "label") <- "Seafood (finfish, shellfish and other seafood) high in n-3 fatty acids (grams)" 
+
+#DR1T_PF_SEAFD_LOW
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SEAFD_LOW_GRAM  = ounces_to_gram_conversion(DR1T_PF_SEAFD_LOW))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SEAFD_LOW_GRAM, .after = DR1T_PF_SEAFD_LOW)
+attr(merged_list$FPED$DR1T_PF_SEAFD_LOW_GRAM, "label") <- "Seafood (finfish, shellfish and other seafood) low in n-3 fatty acids (grams)" 
+
+#DR1T_PF_MPS_TOTAL
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_MPS_TOTAL_GRAM  = ounces_to_gram_conversion(DR1T_PF_MPS_TOTAL))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_MPS_TOTAL_GRAM, .after = DR1T_PF_MPS_TOTAL)
+attr(merged_list$FPED$DR1T_PF_MPS_TOTAL_GRAM, "label") <- "Total meat, poultry, seafood, organ meats, and cured meat (grams)" 
+
+#DR1T_PF_EGGS
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_EGGS_GRAM  = ounces_to_gram_conversion(DR1T_PF_EGGS))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_EGGS_GRAM, .after = DR1T_PF_EGGS)
+attr(merged_list$FPED$DR1T_PF_EGGS_GRAM, "label") <- "Eggs (chicken, duck, goose, quail) and egg substitutes (grams)" 
+
+
+#DR1T_PF_SOY
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SOY_GRAM  = ounces_to_gram_conversion(DR1T_PF_SOY))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SOY_GRAM, .after = DR1T_PF_SOY)
+attr(merged_list$FPED$DR1T_PF_SOY_GRAM, "label") <- "Soy products, excluding calcium fortified soy milk and immature soybeans (grams)" 
+
+#DR1T_PF_NUTSDS
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_NUTSDS_GRAM  = ounces_to_gram_conversion(DR1T_PF_NUTSDS))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_NUTSDS_GRAM, .after = DR1T_PF_NUTSDS)
+attr(merged_list$FPED$DR1T_PF_NUTSDS_GRAM, "label") <- "Peanuts, tree nuts, and seeds, excludes coconut (grams)" 
+
+#DR1T_PF_LEGUMES 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_LEGUMES_GRAM  = ounces_to_gram_conversion(DR1T_PF_LEGUMES))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_LEGUMES_GRAM, .after = DR1T_PF_LEGUMES)
+attr(merged_list$FPED$DR1T_PF_LEGUMES_GRAM, "label") <- "Legumes computed as protein foods (grams)" 
+
+#DR1T_PF_TOTAL 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_TOTAL_GRAM   = ounces_to_gram_conversion(DR1T_PF_TOTAL ))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_TOTAL_GRAM , .after = DR1T_PF_TOTAL )
+attr(merged_list$FPED$DR1T_PF_TOTAL_GRAM , "label") <- "Total meat, poultry, seafood, organ meats, cured meat, eggs, soy, and nuts and seeds; excludes legumes (grams)" 
+
+
+str(merged_list$FPED)
+
+#DR1T_F_CITMLB/Intact fruits (whole or cut) of citrus, melons, and berries (cup eq.) 
+#--> should be in grams and not cup equivalents --> how was the conversion done in other papers?
+
+#- round them up or down or take whole number --> whole number
+# - take frozen and raw? --> make three different categories, a very conservative one, a middler one a very open one
+# - for total: sum all of them up or take mean of the means? --> sum them all up
+
+
+```
+
+### Cups into grams
+
+```{r}
+
+#DR1T_F_CITMLB  = intact fruits of citurs melons and berries
+DR1T_F_CITMLB_CONVERTER <- 163.38
+merged_list$FPED$DR1T_F_CITMLB_GRAM <- NULL
+merged_list$FPED$DR1T_F_CITMLB_GRAM <- merged_list$FPED$DR1T_F_CITMLB * DR1T_F_CITMLB_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_CITMLB_GRAM , .after = DR1T_F_CITMLB)
+attr(merged_list$FPED$DR1T_F_CITMLB_GRAM , "label") <- "Intact fruits (whole or cut) of citrus, melons, and berries (grams)" 
+
+
+#DR1T_F_OTHER  = intact fruits, excluding of citurs melons and berries
+DR1T_F_OTHER_CONVERTER <- 149.66
+merged_list$FPED$DR1T_F_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_F_OTHER_GRAM <- merged_list$FPED$DR1T_F_OTHER * DR1T_F_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_OTHER_GRAM , .after = DR1T_F_OTHER)
+attr(merged_list$FPED$DR1T_F_OTHER_GRAM , "label") <- "Intact fruits (whole or cut); excluding citrus, melons, and berries  (grams)" 
+
+
+#DR1T_F_JUICE  = Fuit jucies, citrus and non citrus
+DR1T_F_JUICE_CONVERTER <- 250
+merged_list$FPED$DR1T_F_JUICE_GRAM <- NULL
+merged_list$FPED$DR1T_F_JUICE_GRAM <- merged_list$FPED$DR1T_F_JUICE * DR1T_F_JUICE_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_JUICE_GRAM , .after = DR1T_F_JUICE)
+attr(merged_list$FPED$DR1T_F_JUICE_GRAM , "label") <- "Fruit juices, citrus and non citrus (grams)" 
+
+#DR1T_F_TOTAL  = Total intact or cut fruits and fruit juices
+DR1T_F_TOTAL_CONVERTER <- 159.92
+merged_list$FPED$DR1T_F_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_F_TOTAL_GRAM  <- merged_list$FPED$DR1T_F_TOTAL * DR1T_F_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_TOTAL_GRAM  , .after = DR1T_F_TOTAL)
+attr(merged_list$FPED$DR1T_F_TOTAL_GRAM  , "label") <- "Total intact or cut fruits and fruit juices (grams)" 
+
+
+#DR1T_F_TOTAL  = Total intact or cut fruits and fruit juices
+DR1T_F_TOTAL_CONVERTER <- 159.92
+merged_list$FPED$DR1T_F_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_F_TOTAL_GRAM  <- merged_list$FPED$DR1T_F_TOTAL * DR1T_F_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_TOTAL_GRAM  , .after = DR1T_F_TOTAL)
+attr(merged_list$FPED$DR1T_F_TOTAL_GRAM  , "label") <- "Total intact or cut fruits and fruit juices (grams)" 
+
+
+#DR1T_V_DRKGR = dark green vegetables
+DR1T_V_DRKGR_CONVERTER <- 113.02
+merged_list$FPED$DR1T_V_DRKGR_GRAM <- NULL
+merged_list$FPED$DR1T_V_DRKGR_GRAM  <- merged_list$FPED$DR1T_V_DRKGR * DR1T_V_DRKGR_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_DRKGR_GRAM  , .after = DR1T_V_DRKGR)
+attr(merged_list$FPED$DR1T_V_DRKGR_GRAM  , "label") <- "Dark green vegetables (grams)" 
+
+
+#DR1T_V_REDOR_TOMATO = Tomatoes and tomato products
+DR1T_V_REDOR_TOMATO_CONVERTER <- 176.25
+merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM  <- merged_list$FPED$DR1T_V_REDOR_TOMATO * DR1T_V_REDOR_TOMATO_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_TOMATO_GRAM  , .after = DR1T_V_REDOR_TOMATO)
+attr(merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM  , "label") <- "Tomatoes and tomato products (grams)" 
+
+
+
+
+#DR1T_V_REDOR_OTHER = Other red and orange vegetables, excluding tomatoes and tomato products
+DR1T_V_REDOR_OTHER_CONVERTER <- 173.44
+merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM  <- merged_list$FPED$DR1T_V_REDOR_OTHER * DR1T_V_REDOR_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_OTHER_GRAM  , .after = DR1T_V_REDOR_OTHER)
+attr(merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM  , "label") <- "Other red and orange vegetables, excluding tomatoes and tomato products (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_REDOR_TOTAL = "Total red and orange vegetables (tomatoes + other red and orange)
+DR1T_V_REDOR_TOTAL_CONVERTER <- 174.38
+merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_REDOR_TOTAL * DR1T_V_REDOR_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_TOTAL_GRAM  , .after = DR1T_V_REDOR_TOTAL)
+attr(merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM  , "label") <- "Total red and orange vegetables (tomatoes + other red and orange) (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_STARCHY_POTATO  = White potatoes
+DR1T_V_STARCHY_POTATO_CONVERTER <- 147.5
+merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_POTATO * DR1T_V_STARCHY_POTATO_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_POTATO_GRAM  , .after = DR1T_V_STARCHY_POTATO)
+attr(merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM  , "label") <- "White potatoes (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_STARCHY_OTHER = Other starchy vegetables, excluding white potatoes
+DR1T_V_STARCHY_OTHER_CONVERTER <- 154.13
+merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_OTHER * DR1T_V_STARCHY_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_OTHER_GRAM  , .after = DR1T_V_STARCHY_OTHER)
+attr(merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM  , "label") <- "Other starchy vegetables, excluding white potatoes (grams)" 
+str(merged_list$FPED)
+
+#DR1T_V_STARCHY_TOTAL = Total starchy vegetables (white potatoes + other starchy)
+DR1T_V_STARCHY_TOTAL_CONVERTER <- 153.6
+merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_TOTAL * DR1T_V_STARCHY_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_TOTAL_GRAM  , .after = DR1T_V_STARCHY_TOTAL)
+attr(merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM  , "label") <- "Total starchy vegetables (white potatoes + other starchy) (grams)" 
+str(merged_list$FPED)
+
+#DR1T_V_OTHER = Other vegetables not in the vegetable components listed above
+DR1T_V_OTHER_CONVERTER <- 131.88
+merged_list$FPED$DR1T_V_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_OTHER_GRAM  <- merged_list$FPED$DR1T_V_OTHER * DR1T_V_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_OTHER_GRAM  , .after = DR1T_V_OTHER)
+attr(merged_list$FPED$DR1T_V_OTHER_GRAM  , "label") <- "Other vegetables not in the vegetable components listed above (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_TOTAL = Total dark green, red and orange, starchy, and other vegetables; excludes legumes
+DR1T_V_TOTAL_CONVERTER <- 134.72
+merged_list$FPED$DR1T_V_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_TOTAL * DR1T_V_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_TOTAL_GRAM  , .after = DR1T_V_TOTAL)
+attr(merged_list$FPED$DR1T_V_TOTAL_GRAM  , "label") <- "Total dark green, red and orange, starchy, and other vegetables; excludes legumes (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_LEGUMES = Legumes computed as vegetables
+DR1T_V_LEGUMES_CONVERTER <- 175.95
+merged_list$FPED$DR1T_V_LEGUMES_GRAM <- NULL
+merged_list$FPED$DR1T_V_LEGUMES_GRAM  <- merged_list$FPED$DR1T_V_LEGUMES * DR1T_V_LEGUMES_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_LEGUMES_GRAM  , .after = DR1T_V_LEGUMES)
+attr(merged_list$FPED$DR1T_V_LEGUMES_GRAM  , "label") <- "Legumes computed as vegetables (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_D_MILK = Fluid milk and calcium fortified soy milk
+DR1T_D_MILK_CONVERTER <- 227.86
+merged_list$FPED$DR1T_D_MILK_GRAM <- NULL
+merged_list$FPED$DR1T_D_MILK_GRAM  <- merged_list$FPED$DR1T_D_MILK * DR1T_D_MILK_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_MILK_GRAM  , .after = DR1T_D_MILK)
+attr(merged_list$FPED$DR1T_D_MILK_GRAM  , "label") <- "Fluid milk and calcium fortified soy milk (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_D_YOGURT =Yogurt 
+DR1T_D_YOGURT_CONVERTER <- 245
+merged_list$FPED$DR1T_D_YOGURT_GRAM <- NULL
+merged_list$FPED$DR1T_D_YOGURT_GRAM  <- merged_list$FPED$DR1T_D_YOGURT * DR1T_D_YOGURT_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_YOGURT_GRAM  , .after = DR1T_D_YOGURT)
+attr(merged_list$FPED$DR1T_D_YOGURT_GRAM  , "label") <- "Yogurt (grams)" 
+str(merged_list$FPED)
+
+#DR1T_D_CHEESE= Cheese
+DR1T_D_CHEESE_CONVERTER <- 59.12
+merged_list$FPED$DR1T_D_CHEESE_GRAM <- NULL
+merged_list$FPED$DR1T_D_CHEESE_GRAM  <- merged_list$FPED$DR1T_D_CHEESE * DR1T_D_CHEESE_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_CHEESE_GRAM  , .after = DR1T_D_CHEESE)
+attr(merged_list$FPED$DR1T_D_CHEESE_GRAM  , "label") <- "Cheese (grams)" 
+str(merged_list$FPED)
+
+
+
+#DR1T_D_TOTAL  = Total milk, yogurt, cheese, and whey
+DR1T_D_TOTAL_CONVERTER <- 79.22
+merged_list$FPED$DR1T_D_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_D_TOTAL_GRAM  <- merged_list$FPED$DR1T_D_TOTAL * DR1T_D_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_TOTAL_GRAM  , .after = DR1T_D_TOTAL)
+attr(merged_list$FPED$DR1T_D_TOTAL_GRAM  , "label") <- "Total milk, yogurt, cheese, and whey (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_ADD_SUGARS = Foods defined as added sugars
+DR1T_ADD_SUGARS_CONVERTER <- 6.08
+merged_list$FPED$DR1T_ADD_SUGARS_GRAM <- NULL
+merged_list$FPED$DR1T_ADD_SUGARS_GRAM  <- merged_list$FPED$DR1T_ADD_SUGARS * DR1T_ADD_SUGARS_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_ADD_SUGARS_GRAM  , .after = DR1T_ADD_SUGARS)
+attr(merged_list$FPED$DR1T_ADD_SUGARS_GRAM  , "label") <- "Foods defined as added sugars (grams)" 
+str(merged_list$FPED)
+```
+
+### Code a new variable that contains the total grams a person has eaten a day, and include only the variables from the PHDI-US.
+
+```{r}
+
+merged_list$FPED <- merged_list$FPED %>%
+  group_by(SEQN) %>%
+  mutate(DR1T_Total_Grams_Per_Day = DR1T_F_TOTAL_GRAM + DR1T_V_DRKGR_GRAM +DR1T_V_REDOR_TOTAL_GRAM + DR1T_V_STARCHY_TOTAL_GRAM +DR1T_V_OTHER_GRAM +DR1T_PF_LEGUMES_GRAM +DR1T_G_WHOLE_GRAM + DR1T_PF_MEAT_GRAM + DR1T_PF_CUREDMEAT_GRAM + DR1T_PF_ORGAN_GRAM  + DR1T_PF_POULT_GRAM + DR1T_PF_SEAFD_HI_GRAM + DR1T_PF_SEAFD_LOW_GRAM + DR1T_PF_EGGS_GRAM + DR1T_PF_NUTSDS_GRAM +DR1T_D_TOTAL_GRAM+ DR1T_OILS  + DR1T_SOLID_FATS + DR1T_ADD_SUGARS_GRAM )
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Grams_Per_Day  , .after = DR1T_A_DRINKS)
+attr(merged_list$FPED$DR1T_Total_Grams_Per_Day  , "label") <- "Total grams consumed per day (grams)" 
+merged_list$FPED$DR1T_Total_Grams_Per_Day
+
+summary(merged_list$FPED$DR1T_Total_Grams_Per_Day, na.rm = T)
+
+```
+
+### Code a new variable that summarizes the variable for non starchy veggies
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  group_by(SEQN) %>%
+  mutate(DR1T_Total_Non_starchy_Veggies = DR1T_V_DRKGR_GRAM +  DR1T_V_REDOR_TOTAL_GRAM+ DR1T_V_OTHER_GRAM)
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Non_starchy_Veggies  , .after = DR1T_V_TOTAL_GRAM)
+attr(merged_list$FPED$DR1T_Total_Non_starchy_Veggies  , "label") <- "Total non starchy veggies consumed (grams)" 
+
+
+```
+
+### Code a new variable that includes the seafood and substitutes variables low and high in N-3 fatty acids
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  group_by(SEQN) %>%
+  mutate(DR1T_Total_Seafood_Sub = DR1T_PF_SEAFD_HI_GRAM +  DR1T_PF_SEAFD_LOW_GRAM)
+merged_list$FPED <- merged_list$FPED %>%
+  relocate( DR1T_Total_Seafood_Sub , .after = DR1T_PF_SEAFD_LOW_GRAM)
+attr(merged_list$FPED$DR1T_Total_Seafood_Sub  , "label") <- "Total Seafood and Substitutes consumed (grams)" 
+```
+
+### Code a new variable that summarizes the red and processed meats
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  group_by(SEQN) %>%
+  mutate(DR1T_Total_Red_Processed_Meat =  DR1T_PF_MEAT_GRAM+ DR1T_PF_CUREDMEAT_GRAM + DR1T_PF_ORGAN_GRAM )
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Red_Processed_Meat, .after = DR1T_PF_ORGAN_GRAM)
+attr(merged_list$FPED$DR1T_Total_Red_Processed_Meat  , "label") <- "Total red and processed meats consumed (grams)" 
+str(merged_list$FPED)
+```
+
+### SODAs
+
+**The sodas are computed as added sugars in the FPEDs**! They can be checked in the food codes table made available online: <https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fped-databases/>
+
+<https://fdc.nal.usda.gov/fdc-app.html#/food-details/2346034/nutrients> (website that shows the nutritional values for the food codes).
+
+What is a good definition for sweetened beverages? --\>the one by the WHO: <https://www.ncbi.nlm.nih.gov/books/NBK285538/>
+
+WHO definition: Free sugars include monosaccharides and disaccharides added to foods and beverages by the manufacturer, cook or consumer, and sugars naturally present in honey, syrups, **fruit juices and fruit juice concentrates.** In both adults and children, WHO recommends reducing the intake of free sugars to less than 10% of total energy intake
+
+So then for fruit juices and fruit juice concentrates, the sugars should be added to the "added sugar" variable as well. Which is at least in the FPED 05/06 not the case.
+
+## Compute the PHDI-US
+
+```{r}
+
+#the following code is probably best put into a function! But here I get error messages because the list I would need is the merged_list$FPED. 
+
+#the maximal and minimum scores you can get in each category
+    PHDI_MIN = 0
+    PHDI_MAX = 10
+    PHDI_MAX_2 = 5 #ratio components
+
+#the upper and lower limit(s) for every variable are percentages of total grams eaten that day of one participant
+    PHDI_Nuts_min = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Nuts_max = 0.025 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Legumes_min = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Legumes_max = 0.085 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Fruits_min = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Fruits_max = 0.101 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_NS_Veg_min = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_NS_Veg_max = 0.152* merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_W_Grains_min = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_W_Grains_max = 0.25 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_min1 = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_min2 = 0.051 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_max = 0.014 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_min1 = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_min2 = 0.051 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_max = 0.025 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_min1 = 0 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_min2 = 0.253 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_max = 0.126 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_min1 = 0* merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_min2 = 0.04* merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_max = 0.02 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Eggs_min = 0.013 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Eggs_max = 0.007 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_RP_Meat_min = 0.014 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_RP_Meat_max = 0.007 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Poultry_min = 0.29 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Poultry_max = 0.015 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Sat_Fats_min = 0.006 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Sat_Fats_max = 0.003 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Add_Sugars_min = 0.016 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    PHDI_Add_Sugars_max = 0.008 * merged_list$FPED$DR1T_Total_Grams_Per_Day
+    
+    
+# three functions, one for adequacy components, once for optimum components and once for moderation components
+    SCORE_ADEQUACY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+      case_when(
+        actual_serv >= max_serv ~ max_score,
+        actual_serv = min_serv ~ min_score,
+        TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+      )
+    }
+    
+    SCORE_MODERATION = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+      case_when(
+        actual_serv >= min_serv ~ min_score,
+        actual_serv <= max_serv ~ max_score,
+        TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+      )
+    }
+#if the actual serving size is between the min_serv1 and the max_serv, then we need another equation than when actual_serv is between max_serv and min_serv2    
+  SCORE_OPTIMUM = function(actual_serv, min_serv1, min_serv2, max_serv, min_score, max_score) {
+      case_when(
+        actual_serv = max_serv ~ max_score,
+        actual_serv = min_serv1 ~ min_score,
+        actual_serv >= min_serv2 ~ min_score,
+        actual_serv < max_serv ~ ((min_score + (actual_serv - min_serv1) * max_score) / (max_serv - min_serv1)),
+        TRUE ~  min_score + (actual_serv - min_serv2) * max_score / (max_serv - min_serv2)
+      )
+    }
+    
+#  Ratio components?
+# Dark green vegetables (grams) / Total red and orange vegetables (tomatoes + other red and orange) (grams) + Other vegetables not in the vegetable components listed above (grams)
+#  DR1T_V_DRKGR_GRAM / DR1T_V_REDOR_TOTAL_GRAM  + DR1T_V_OTHER_GRAM 
+# and the same is true for the red veggies --> red veggies / all other non starchy veggies
+  
+  SCORE_RATIO = function(green_veg, red_veg, other_veg, min_score, max_score) {
+    ratio = (green_veg / (red_veg + other_veg))*100
+    perfect_ratio =33.3
+    case_when(
+      ratio = perfect_ratio ~ max_score,
+      ratio < perfect_ratio ~ (ratio * 5 )/ 33.3,
+      ratio > perfect_ratio ~ (ratio -100) * 5 / (33.3 - 100)
+    )
+  }
+  
+#here again we need to calrify that the varibales are in the merged_list$FPED
+ 
+
+#Adequacy components   
+  PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Legumes = SCORE_ADEQUACY(DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Fruits = SCORE_ADEQUACY(DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
+  PHDI_NS_Veggies = SCORE_ADEQUACY(DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Whole_Grains = SCORE_ADEQUACY(DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
+#Optimum components  
+  PHDI_Seafood_Sub = SCORE_OPTIMUM(DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Starchy_Veggies = SCORE_OPTIMUM(DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Dairy = SCORE_OPTIMUM(DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Unsaturated_Oils = SCORE_OPTIMUM(DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
+#Ratio components
+  PHDI_DGV_Ratio = SCORE_RATIO(DR1T_V_DRKGR_GRAM, DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+  PHDI_ReV_Ratio = SCORE_RATIO(DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_DRKGR_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+#Moderation compnents
+  PHDI_Eggs = SCORE_MODERATION(DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Red_Proc_Meat = SCORE_MODERATION(DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Poultry = SCORE_MODERATION(DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Saturated_Fats = SCORE_MODERATION(DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Added_Sugars = SCORE_MODERATION(DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
+  
+# the PHDI for every individual for day 1
+PHDI_all_D1 = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_NS_Veggies+PHDI_Whole_Grains+PHDI_Seafood_Sub+PHDI_Starchy_Veggies+PHDI_Dairy+PHDI_Unsaturated_Oils+PHDI_DGV_Ratio+PHDI_ReV_Ratio+PHDI_Eggs+PHDI_Red_Proc_Meat+PHDI_Poultry+PHDI_Saturated_Fats+PHDI_Added_Sugars
+  
+
+```
+
+```{r}
+merged_list$FPED_IND
+```
+
+```{r}
+
+
+# Check if 11004 exists in the variable
+if (any(92433000%in% merged_list$FPED_IND$DR1IFDCD)) {
+  print(" exists in the variable")
+} else {
+  print(" does not exist in the variable")
+}
+
+```
+
+```{r}
+merged_list$FPED %>%
+  group_by()
+
+
+FPED_list<- merged_list[[1]]
+```
