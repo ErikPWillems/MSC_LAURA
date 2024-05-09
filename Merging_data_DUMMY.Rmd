@@ -540,7 +540,21 @@ WHO definition: Free sugars include monosaccharides and disaccharides added to f
 
 So then for fruit juices and fruit juice concentrates, the sugars should be added to the "added sugar" variable as well. Which is at least in the FPED 05/06 not the case.
 
+\--\> went through the Food codes list of 2005/2006, checked if free sugars were also scored in the added_sugars variable. If not, the FPED_Ind variable was screened to see if it was even in the data set. If not, nothing else was done. If yes, then the food code was entered into this [website](https://fdc.nal.usda.gov/fdc-app.html#/food-details/2346034/nutrients) to get the nutritional values, respectively the sugar content. Then the FPED_Ind list was screen for the different food codes, to get the the grams consumed of the foods/beverages, and then the sugar content was calculated. After that, the Added_sugar variables was changed for the individual / participant.
+
+```{r}
+
+# Check if the food code exists in the variable, and change the food code number every time
+if (any(92433000%in% merged_list$FPED_IND$DR1IFDCD)) {
+  print(" exists in the variable")
+} else {
+  print(" does not exist in the variable")
+}
+```
+
 ## Compute the PHDI-US
+
+### Code the basic calculation of the PHDI-US
 
 ```{r}
 
@@ -590,7 +604,7 @@ So then for fruit juices and fruit juice concentrates, the sugars should be adde
     SCORE_ADEQUACY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
       case_when(
         actual_serv >= max_serv ~ max_score,
-        actual_serv = min_serv ~ min_score,
+        actual_serv == min_serv ~ min_score,
         TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
       )
     }
@@ -605,8 +619,8 @@ So then for fruit juices and fruit juice concentrates, the sugars should be adde
 #if the actual serving size is between the min_serv1 and the max_serv, then we need another equation than when actual_serv is between max_serv and min_serv2    
   SCORE_OPTIMUM = function(actual_serv, min_serv1, min_serv2, max_serv, min_score, max_score) {
       case_when(
-        actual_serv = max_serv ~ max_score,
-        actual_serv = min_serv1 ~ min_score,
+        actual_serv == max_serv ~ max_score,
+        actual_serv == min_serv1 ~ min_score,
         actual_serv >= min_serv2 ~ min_score,
         actual_serv < max_serv ~ ((min_score + (actual_serv - min_serv1) * max_score) / (max_serv - min_serv1)),
         TRUE ~  min_score + (actual_serv - min_serv2) * max_score / (max_serv - min_serv2)
@@ -622,7 +636,7 @@ So then for fruit juices and fruit juice concentrates, the sugars should be adde
     ratio = (green_veg / (red_veg + other_veg))*100
     perfect_ratio =33.3
     case_when(
-      ratio = perfect_ratio ~ max_score,
+      ratio == perfect_ratio ~ max_score,
       ratio < perfect_ratio ~ (ratio * 5 )/ 33.3,
       ratio > perfect_ratio ~ (ratio -100) * 5 / (33.3 - 100)
     )
@@ -632,52 +646,40 @@ So then for fruit juices and fruit juice concentrates, the sugars should be adde
  
 
 #Adequacy components   
-  PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Legumes = SCORE_ADEQUACY(DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Fruits = SCORE_ADEQUACY(DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
-  PHDI_NS_Veggies = SCORE_ADEQUACY(DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Whole_Grains = SCORE_ADEQUACY(DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(merged_list$FPED$DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Legumes = SCORE_ADEQUACY(merged_list$FPED$DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Fruits = SCORE_ADEQUACY(merged_list$FPED$DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
+  PHDI_NS_Veggies = SCORE_ADEQUACY(merged_list$FPED$DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Whole_Grains = SCORE_ADEQUACY(merged_list$FPED$DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
 #Optimum components  
-  PHDI_Seafood_Sub = SCORE_OPTIMUM(DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Starchy_Veggies = SCORE_OPTIMUM(DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Dairy = SCORE_OPTIMUM(DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Unsaturated_Oils = SCORE_OPTIMUM(DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Seafood_Sub = SCORE_OPTIMUM(merged_list$FPED$DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Starchy_Veggies = SCORE_OPTIMUM(merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Dairy = SCORE_OPTIMUM(merged_list$FPED$DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Unsaturated_Oils = SCORE_OPTIMUM(merged_list$FPED$DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
 #Ratio components
-  PHDI_DGV_Ratio = SCORE_RATIO(DR1T_V_DRKGR_GRAM, DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
-  PHDI_ReV_Ratio = SCORE_RATIO(DR1T_V_REDOR_TOTAL_GRAM, DR1T_V_DRKGR_GRAM, DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+  PHDI_DGV_Ratio = SCORE_RATIO(merged_list$FPED$DR1T_V_DRKGR_GRAM, merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM, merged_list$FPED$DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+  PHDI_ReV_Ratio = SCORE_RATIO(merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM, merged_list$FPED$DR1T_V_DRKGR_GRAM, merged_list$FPED$DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
 #Moderation compnents
-  PHDI_Eggs = SCORE_MODERATION(DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Red_Proc_Meat = SCORE_MODERATION(DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Poultry = SCORE_MODERATION(DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Saturated_Fats = SCORE_MODERATION(DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
-  PHDI_Added_Sugars = SCORE_MODERATION(DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Eggs = SCORE_MODERATION(merged_list$FPED$DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Red_Proc_Meat = SCORE_MODERATION(merged_list$FPED$DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Poultry = SCORE_MODERATION(merged_list$FPED$DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Saturated_Fats = SCORE_MODERATION(merged_list$FPED$DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
+  PHDI_Added_Sugars = SCORE_MODERATION(merged_list$FPED$DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
   
 # the PHDI for every individual for day 1
 PHDI_all_D1 = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_NS_Veggies+PHDI_Whole_Grains+PHDI_Seafood_Sub+PHDI_Starchy_Veggies+PHDI_Dairy+PHDI_Unsaturated_Oils+PHDI_DGV_Ratio+PHDI_ReV_Ratio+PHDI_Eggs+PHDI_Red_Proc_Meat+PHDI_Poultry+PHDI_Saturated_Fats+PHDI_Added_Sugars
   
-
+#--> SOMETHING IS NOT RIGHT, THERE ARE NEGATIVE VALUES IN THERE
 ```
 
-```{r}
-merged_list$FPED_IND
-```
+### Add code, so if foods within the Legumes or/and Peanuts exceed the optimum level, the "rest" can be added to the Seafood and Substitute variable
 
 ```{r}
 
-
-# Check if 11004 exists in the variable
-if (any(92433000%in% merged_list$FPED_IND$DR1IFDCD)) {
-  print(" exists in the variable")
-} else {
-  print(" does not exist in the variable")
-}
-
 ```
 
+### Basic descriptives of PHDI
+
 ```{r}
-merged_list$FPED %>%
-  group_by()
 
-
-FPED_list<- merged_list[[1]]
 ```
