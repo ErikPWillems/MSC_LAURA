@@ -1,9 +1,10 @@
 ---
-qu---
 title: "Merging_datasets"
 author: "Laura Schirlo"
 date: "2024-03-28"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Dummy example
@@ -475,6 +476,39 @@ attr(merged_list$FPED$DR1T_ADD_SUGARS_GRAM  , "label") <- "Foods defined as adde
 str(merged_list$FPED)
 ```
 
+### Code a new variable that summarizes the variable for non starchy veggies
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Non_starchy_Veggies = DR1T_V_DRKGR_GRAM +  DR1T_V_REDOR_TOTAL_GRAM+ DR1T_V_OTHER_GRAM)
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Non_starchy_Veggies  , .after = DR1T_V_TOTAL_GRAM)
+attr(merged_list$FPED$DR1T_Total_Non_starchy_Veggies  , "label") <- "Total non starchy veggies consumed (grams)" 
+
+
+```
+
+### Code a new variable that includes the seafood and substitutes variables low and high in N-3 fatty acids
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Seafood_Sub = DR1T_PF_SEAFD_HI_GRAM +  DR1T_PF_SEAFD_LOW_GRAM)
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Seafood_Sub , .after = DR1T_PF_SEAFD_LOW_GRAM)
+attr(merged_list$FPED$DR1T_Total_Seafood_Sub  , "label") <- "Total Seafood and Substitutes consumed (grams)" 
+```
+
+### Code a new variable that summarizes the red and processed meats
+
+```{r}
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Red_Processed_Meat =  DR1T_PF_MEAT_GRAM+ DR1T_PF_CUREDMEAT_GRAM + DR1T_PF_ORGAN_GRAM )
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Red_Processed_Meat, .after = DR1T_PF_ORGAN_GRAM)
+attr(merged_list$FPED$DR1T_Total_Red_Processed_Meat  , "label") <- "Total red and processed meats consumed (grams)" 
+str(merged_list$FPED)
+```
+
 ### Code a new variable that contains the total grams a person has eaten a day, and include only the variables from the PHDI-US.
 
 ```{r}
@@ -495,39 +529,6 @@ attr(merged_list$FPED$DR1T_Total_Grams_Per_Day  , "label") <- "Total grams consu
 str(merged_list$FPED)
 summary(merged_list$FPED$DR1T_Total_Grams_Per_Day, na.rm = T)
 
-```
-
-### Code a new variable that summarizes the variable for non starchy veggies
-
-```{r}
-merged_list$FPED <- merged_list$FPED %>%
-  mutate(DR1T_Total_Non_starchy_Veggies = DR1T_V_DRKGR_GRAM +  DR1T_V_REDOR_TOTAL_GRAM+ DR1T_V_OTHER_GRAM)
-merged_list$FPED <- merged_list$FPED %>%
-  relocate(DR1T_Total_Non_starchy_Veggies  , .after = DR1T_V_TOTAL_GRAM)
-attr(merged_list$FPED$DR1T_Total_Non_starchy_Veggies  , "label") <- "Total non starchy veggies consumed (grams)" 
-
-
-```
-
-### Code a new variable that includes the seafood and substitutes variables low and high in N-3 fatty acids
-
-```{r}
-merged_list$FPED <- merged_list$FPED %>%
-  mutate(DR1T_Total_Seafood_Sub = DR1T_PF_SEAFD_HI_GRAM +  DR1T_PF_SEAFD_LOW_GRAM)
-merged_list$FPED <- merged_list$FPED %>%
-  relocate( DR1T_Total_Seafood_Sub , .after = DR1T_PF_SEAFD_LOW_GRAM)
-attr(merged_list$FPED$DR1T_Total_Seafood_Sub  , "label") <- "Total Seafood and Substitutes consumed (grams)" 
-```
-
-### Code a new variable that summarizes the red and processed meats
-
-```{r}
-merged_list$FPED <- merged_list$FPED %>%
-  mutate(DR1T_Total_Red_Processed_Meat =  DR1T_PF_MEAT_GRAM+ DR1T_PF_CUREDMEAT_GRAM + DR1T_PF_ORGAN_GRAM )
-merged_list$FPED <- merged_list$FPED %>%
-  relocate(DR1T_Total_Red_Processed_Meat, .after = DR1T_PF_ORGAN_GRAM)
-attr(merged_list$FPED$DR1T_Total_Red_Processed_Meat  , "label") <- "Total red and processed meats consumed (grams)" 
-str(merged_list$FPED)
 ```
 
 ### SODAs
@@ -576,19 +577,29 @@ if (any(25230450%in% merged_list$FPED_IND$DR1IFDCD)) {
 So if the ingredient/food code was not in the FPED_Ind list, nothing else was done. If it was, then the food code was entered into this [website](https://fdc.nal.usda.gov/fdc-app.html#/food-details/2346034/nutrients) to get the nutritional values, respectively the sugar content. Then the FPED_Ind list was screened for the food code, to get the the grams consumed of the foods/beverages, and then the sugar content was calculated. After that, the Added_sugar variables was changed for the individual / participant.
 
 ```{r}
-# Find the rows where the Food code number 256000 is present in the column 
-rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 92550110, ]
-str(rows_with_food_code)
+# Find the rows where the Food code number 61201010 is present in the column 
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61201010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.1/100)
 
-rows_with_food_code$Adjusted_DR1IGRMS <- rows_with_food_code$DR1IGRMS * (4.6/100)
-str(rows_with_food_code)
-
+#check that the SEQN number in the rows_with_food_code are also in the merged_list$FPED, and if so, then the free sugar is added to the sugar varibale in merged_list$FPED
 for (i in 1:nrow(rows_with_food_code)) {
-    seqn <- rows_with_food_code[i, "SEQN"]
-    merged_list$FPED$DR1T_ADD_SUGARS_GRAM[merged_list$FPED$SEQN == seqn] <- 
-      merged_list$FPED$DR1T_ADD_SUGARS_GRAM[merged_list$FPED$SEQN == seqn] + rows_with_food_code[i, "Adjusted_DR1IGRMS"]
-}   
-print(merged_list$FPED$DR1T_ADD_SUGARS_GRAM)
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+
+print(merged_list$FPED)
+
+
+glimpse(rows_with_food_code$DR1I_ADD_SUGARS)
+glimpse(merged_list$FPED %>% filter(SEQN == 32113))
+#for SEQN number = 32113: 
+## The sugar added from the grapefruit juice is = 22.49.
+### The sugar content before for that person was : 114
+#### the sugar content after adding the sugar form the grapefruit juice is: 136.4952 
+##### seems to work for the Grapefruit juice!!
+##### double checked other SEQN numbers that did not have to food code / did not consume grapefruit juice --> nothing was changed in the sugar variable for that SEQN! 
+
 ```
 
 ## Compute the PHDI-US
@@ -679,9 +690,6 @@ print(merged_list$FPED$DR1T_ADD_SUGARS_GRAM)
       ratio > 33.3 ~ pmax(((100 - ratio) / (100 - 33.3)) * max_score, min_score)
     )
   }
-  
-  (50/(20+30))*100
-
 
 #Adequacy components   
   PHDI_Nuts_and_Peanuts = SCORE_ADEQUACY(merged_list$FPED$DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
@@ -703,44 +711,127 @@ print(merged_list$FPED$DR1T_ADD_SUGARS_GRAM)
   PHDI_Poultry = SCORE_MODERATION(merged_list$FPED$DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
   PHDI_Saturated_Fats = SCORE_MODERATION(merged_list$FPED$DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
   PHDI_Added_Sugars = SCORE_MODERATION(merged_list$FPED$DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
-  
+
 # the PHDI for every individual for day 1
 PHDI_all_D1 = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_NS_Veggies+PHDI_Whole_Grains+PHDI_Seafood_Sub+PHDI_Starchy_Veggies+PHDI_Dairy+PHDI_Unsaturated_Oils+PHDI_DGV_Ratio+PHDI_ReV_Ratio+PHDI_Eggs+PHDI_Red_Proc_Meat+PHDI_Poultry+PHDI_Saturated_Fats+PHDI_Added_Sugars
-
-print(PHDI_all_D1)
-#--> SOMETHING IS NOT RIGHT, THERE ARE NEGATIVE VALUES IN THERE
-```
-
-### There were negative values in the PHDI_all_D1 list, which cant be true!
-
-```{r}
-# Function to check for negative values in a  list
-
-check_negatives <- function(lst) {
-  neg_values <- lst[!is.na(lst) & lst < 0]
-  if (length(neg_values) > 0) {
-    cat("There are negative values in the list.\n")
-    print(neg_values)
-  } else {
-    cat("There are no negative values in the list.\n")
-  }
-}
-check_negatives(PHDI_Seafood_Sub)
-check_negatives(PHDI_Eggs)
-check_negatives(PHDI_DGV_Ratio)
-check_negatives(PHDI_ReV_Ratio)
-print(PHDI_ReV_Ratio)
-check_negatives(PHDI_all_D1)
-
+  
+  
+hist(PHDI_all_D1)
+summary(PHDI_all_D1)
 ```
 
 ### Add code, so if foods within the Legumes or/and Peanuts exceed the optimum level, the "rest" can be added to the Seafood and Substitute variable
 
 ```{r}
 
+###### Nuts
+excess_N <- ifelse(merged_list$FPED$DR1T_PF_NUTSDS_GRAM > PHDI_Nuts_max & 
+                 merged_list$FPED$DR1T_Total_Seafood_Sub < PHDI_Seaf_S_max,
+                 merged_list$FPED$DR1T_PF_NUTSDS_GRAM - PHDI_Nuts_max, 0)
+
+merged_list$FPED$DR1T_Total_Seafood_Sub_new <- ifelse(excess_N + merged_list$FPED$DR1T_Total_Seafood_Sub >= PHDI_Seaf_S_max, PHDI_Seaf_S_max, excess_N + merged_list$FPED$DR1T_Total_Seafood_Sub)
+
+
+PHDI_Seafood_Sub_new = SCORE_OPTIMUM(merged_list$FPED$DR1T_Total_Seafood_Sub_new, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+summary(PHDI_Seafood_Sub_new)
+
+
+###### Legumes
+
+excess_L <- ifelse(merged_list$FPED$DR1T_V_LEGUMES_GRAM > PHDI_Legumes_max & 
+                 merged_list$FPED$DR1T_Total_Seafood_Sub < PHDI_Seaf_S_max,
+                 merged_list$FPED$DR1T_V_LEGUMES_GRAM - PHDI_Legumes_max, 0)
+
+merged_list$FPED$DR1T_Total_Seafood_Sub_new <- ifelse(excess_L+ merged_list$FPED$DR1T_Total_Seafood_Sub >= PHDI_Seaf_S_max, PHDI_Seaf_S_max, excess_L+ merged_list$FPED$DR1T_Total_Seafood_Sub)
+
+
+PHDI_Seafood_Sub_new = SCORE_OPTIMUM(merged_list$FPED$DR1T_Total_Seafood_Sub_new, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+
+
+PHDI_all_D1_Excess = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_NS_Veggies+PHDI_Whole_Grains+PHDI_Seafood_Sub_new+PHDI_Starchy_Veggies+PHDI_Dairy+PHDI_Unsaturated_Oils+PHDI_DGV_Ratio+PHDI_ReV_Ratio+PHDI_Eggs+PHDI_Red_Proc_Meat+PHDI_Poultry+PHDI_Saturated_Fats+PHDI_Added_Sugars
+
 ```
 
-### Basic descriptives of PHDI
+difference between PHDI normal and if compensated?
+
+```{r}
+summary(PHDI_all_D1)
+summary(PHDI_all_D1_Excess)
+hist(PHDI_all_D1)
+hist(PHDI_all_D1_Excess)
+```
+
+### Trying to see if the PHDI code is correct on a smaller sample
+
+```{r}
+# Extract the first 5 rows from each data frame within merged_list$FPED
+subsetted_list <- merged_list$FPED[1:5, ]
+
+# Print the resulting list of data frames
+print(subsetted_list)
+
+#Insert the PHDI code and change merged_list for subsetted_list
+  PHDI_SUBSETTED_Nuts_and_Peanuts = SCORE_ADEQUACY(subsetted_list$DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Legumes = SCORE_ADEQUACY(subsetted_list$DR1T_PF_LEGUMES_GRAM, PHDI_Legumes_min, PHDI_Legumes_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Fruits = SCORE_ADEQUACY(subsetted_list$DR1T_F_TOTAL_GRAM, PHDI_Fruits_min, PHDI_Fruits_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_NS_Veggies = SCORE_ADEQUACY(subsetted_list$DR1T_Total_Non_starchy_Veggies, PHDI_NS_Veg_min, PHDI_NS_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Whole_Grains = SCORE_ADEQUACY(subsetted_list$DR1T_G_WHOLE_GRAM, PHDI_W_Grains_min, PHDI_W_Grains_max, PHDI_MIN, PHDI_MAX)
+#Optimum components  
+  PHDI_SUBSETTED_Seafood_Sub = SCORE_OPTIMUM(subsetted_list$DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Starchy_Veggies = SCORE_OPTIMUM(subsetted_list$DR1T_V_STARCHY_TOTAL_GRAM, PHDI_ST_Veg_min1, PHDI_ST_Veg_min2, PHDI_ST_Veg_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Dairy = SCORE_OPTIMUM(subsetted_list$DR1T_D_TOTAL_GRAM, PHDI_Dairy_min1, PHDI_Dairy_min2, PHDI_Dairy_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Unsaturated_Oils = SCORE_OPTIMUM(subsetted_list$DR1T_OILS, PHDI_UNS_Oils_min1, PHDI_UNS_Oils_min2, PHDI_UNS_Oils_max, PHDI_MIN, PHDI_MAX)
+#Ratio components
+  PHDI_SUBSETTED_DGV_Ratio = SCORE_RATIO(subsetted_list$DR1T_V_DRKGR_GRAM, subsetted_list$DR1T_V_REDOR_TOTAL_GRAM, subsetted_list$DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+  PHDI_SUBSETTED_ReV_Ratio = SCORE_RATIO(subsetted_list$DR1T_V_REDOR_TOTAL_GRAM, subsetted_list$DR1T_V_DRKGR_GRAM, subsetted_list$DR1T_V_OTHER_GRAM, PHDI_MIN, PHDI_MAX_2)
+#Moderation compnents
+  PHDI_SUBSETTED_Eggs = SCORE_MODERATION(subsetted_list$DR1T_PF_EGGS_GRAM, PHDI_Eggs_min, PHDI_Eggs_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Red_Proc_Meat = SCORE_MODERATION(subsetted_list$DR1T_Total_Red_Processed_Meat, PHDI_RP_Meat_min, PHDI_RP_Meat_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Poultry = SCORE_MODERATION(subsetted_list$DR1T_PF_POULT_GRAM, PHDI_Poultry_min, PHDI_Poultry_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Saturated_Fats = SCORE_MODERATION(subsetted_list$DR1T_SOLID_FATS, PHDI_Sat_Fats_min, PHDI_Sat_Fats_max, PHDI_MIN, PHDI_MAX)
+  PHDI_SUBSETTED_Added_Sugars = SCORE_MODERATION(subsetted_list$DR1T_ADD_SUGARS_GRAM, PHDI_Add_Sugars_min, PHDI_Add_Sugars_max, PHDI_MIN, PHDI_MAX)
+
+
+excess_N_SUB <- ifelse(subsetted_list$DR1T_PF_NUTSDS_GRAM > PHDI_Nuts_max & 
+                 subsetted_list$DR1T_Total_Seafood_Sub < PHDI_Seaf_S_max,
+                 subsetted_list$DR1T_PF_NUTSDS_GRAM - PHDI_Nuts_max, 0)
+
+subsetted_list$DR1T_Total_Seafood_Sub_new <- ifelse(excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub >=
+                                                        PHDI_Seaf_S_max, PHDI_Seaf_S_max,
+                                                      excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub)
+
+PHDI_Seafood_Sub_new = SCORE_OPTIMUM(subsetted_list$DR1T_Total_Seafood_Sub_new, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+summary(PHDI_Seafood_Sub_new)
+
+
+###### Legumes
+
+excess_L <- ifelse(subsetted_list$DR1T_V_LEGUMES_GRAM > PHDI_Legumes_max & 
+                 subsetted_list$DR1T_Total_Seafood_Sub < PHDI_Seaf_S_max,
+                 subsetted_list$DR1T_V_LEGUMES_GRAM - PHDI_Legumes_max, 0)
+
+subsetted_list$DR1T_Total_Seafood_Sub_new <- ifelse(excess_L+subsetted_list$DR1T_Total_Seafood_Sub >=
+                                                        PHDI_Seaf_S_max, PHDI_Seaf_S_max,
+                                                      excess_L + subsetted_list$DR1T_Total_Seafood_Sub)
+
+PHDI_Seafood_Sub = SCORE_OPTIMUM(subsetted_list$DR1T_Total_Seafood_Sub, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+summary(PHDI_Seafood_Sub)
+
+PHDI_Subsetted_Seafood_Sub_new = SCORE_OPTIMUM(subsetted_list$DR1T_Total_Seafood_Sub_new, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
+summary(PHDI_Seafood_Sub_new)  
+    
+
+# the PHDI for every individual for day 1
+PHDI_SUBSETTED_all_D1 = PHDI_SUBSETTED_Nuts_and_Peanuts + PHDI_SUBSETTED_Legumes + PHDI_SUBSETTED_Fruits + PHDI_SUBSETTED_NS_Veggies+PHDI_SUBSETTED_Whole_Grains+PHDI_Subsetted_Seafood_Sub_new+PHDI_SUBSETTED_Starchy_Veggies+PHDI_SUBSETTED_Dairy+PHDI_SUBSETTED_Unsaturated_Oils+PHDI_SUBSETTED_DGV_Ratio+PHDI_SUBSETTED_ReV_Ratio+PHDI_SUBSETTED_Eggs+PHDI_SUBSETTED_Red_Proc_Meat+PHDI_SUBSETTED_Poultry+PHDI_SUBSETTED_Saturated_Fats+PHDI_SUBSETTED_Added_Sugars
+
+summary(PHDI_SUBSETTED_all_D1)
+
+PHDI_SUBSETTED_all_D1
+##seems to work!!
+
+```
+
+## Basic descriptions of PHDI
 
 ```{r}
 
