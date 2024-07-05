@@ -1,0 +1,933 @@
+---
+title: "PHDI_0506_D1"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# PHDI of cycle 2005/2006 on Day 1
+
+## Loading the data
+
+```{r}
+load("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/NHANES_combined_GitHub/NHANES_20052006.rda")
+merged_list <- NHANES_20052006
+```
+
+## Transforming the variables into grams / day
+
+```{r}
+ounces_to_gram_conversion <- function(ounces){
+  grams <- ounces * 28.35
+  return(grams)
+}
+
+#DR1T_G_WHOLE_GRAM
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_WHOLE_GRAM = ounces_to_gram_conversion(DR1T_G_WHOLE))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_WHOLE_GRAM, .after = DR1T_G_WHOLE)
+attr(merged_list$FPED$DR1T_G_WHOLE_GRAM, "label") <- "Whole grains (grams)"  
+
+#DR1T_G_REFINED
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_REFINED_GRAM = ounces_to_gram_conversion(DR1T_G_REFINED))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_REFINED_GRAM, .after = DR1T_G_REFINED)
+attr(merged_list$FPED$DR1T_G_REFINED_GRAM, "label") <- "Refined or non-whole grains (grams)"
+
+#DR1T_G_TOTAL
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_G_TOTAL_GRAM = ounces_to_gram_conversion(DR1T_G_TOTAL))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_G_TOTAL_GRAM, .after = DR1T_G_TOTAL)
+attr(merged_list$FPED$DR1T_G_TOTAL_GRAM, "label") <- "Total whole and refined grains (grams)" 
+
+#DR1T_PF_MEAT
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_MEAT_GRAM = ounces_to_gram_conversion(DR1T_PF_MEAT))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_MEAT_GRAM, .after = DR1T_PF_MEAT)
+attr(merged_list$FPED$DR1T_PF_MEAT_GRAM, "label") <- "Beef, veal, pork, lamb, game meat; excludes organ meats and cured meat (grams)" 
+
+#DR1T_PF_CUREDMEAT 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_CUREDMEAT_GRAM  = ounces_to_gram_conversion(DR1T_PF_CUREDMEAT ))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_CUREDMEAT_GRAM, .after = DR1T_PF_CUREDMEAT )
+attr(merged_list$FPED$DR1T_PF_CUREDMEAT_GRAM, "label") <- "Cured/luncheon meat made from beef, pork, or poultry (grams)" 
+
+#DR1T_PF_ORGAN 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_ORGAN_GRAM  = ounces_to_gram_conversion(DR1T_PF_ORGAN))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_ORGAN_GRAM, .after = DR1T_PF_ORGAN  )
+attr(merged_list$FPED$DR1T_PF_ORGAN_GRAM, "label") <- "Organ meat from beef, veal, pork, lamb, game, and poultry (grams)" 
+
+#DR1T_PF_POULT 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_POULT_GRAM  = ounces_to_gram_conversion(DR1T_PF_POULT))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_POULT_GRAM, .after = DR1T_PF_POULT)
+attr(merged_list$FPED$DR1T_PF_POULT_GRAM, "label") <- "Chicken, turkey, Cornish hens, and game birds; excludes organ meats and cured meat (grams)" 
+
+#DR1T_PF_SEAFD_HI
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SEAFD_HI_GRAM  = ounces_to_gram_conversion(DR1T_PF_SEAFD_HI))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SEAFD_HI_GRAM, .after = DR1T_PF_SEAFD_HI)
+attr(merged_list$FPED$DR1T_PF_SEAFD_HI_GRAM, "label") <- "Seafood (finfish, shellfish and other seafood) high in n-3 fatty acids (grams)" 
+
+#DR1T_PF_SEAFD_LOW
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SEAFD_LOW_GRAM  = ounces_to_gram_conversion(DR1T_PF_SEAFD_LOW))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SEAFD_LOW_GRAM, .after = DR1T_PF_SEAFD_LOW)
+attr(merged_list$FPED$DR1T_PF_SEAFD_LOW_GRAM, "label") <- "Seafood (finfish, shellfish and other seafood) low in n-3 fatty acids (grams)" 
+
+#DR1T_PF_MPS_TOTAL
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_MPS_TOTAL_GRAM  = ounces_to_gram_conversion(DR1T_PF_MPS_TOTAL))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_MPS_TOTAL_GRAM, .after = DR1T_PF_MPS_TOTAL)
+attr(merged_list$FPED$DR1T_PF_MPS_TOTAL_GRAM, "label") <- "Total meat, poultry, seafood, organ meats, and cured meat (grams)" 
+
+#DR1T_PF_EGGS
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_EGGS_GRAM  = ounces_to_gram_conversion(DR1T_PF_EGGS))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_EGGS_GRAM, .after = DR1T_PF_EGGS)
+attr(merged_list$FPED$DR1T_PF_EGGS_GRAM, "label") <- "Eggs (chicken, duck, goose, quail) and egg substitutes (grams)" 
+
+
+#DR1T_PF_SOY
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_SOY_GRAM  = ounces_to_gram_conversion(DR1T_PF_SOY))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_SOY_GRAM, .after = DR1T_PF_SOY)
+attr(merged_list$FPED$DR1T_PF_SOY_GRAM, "label") <- "Soy products, excluding calcium fortified soy milk and immature soybeans (grams)" 
+
+#DR1T_PF_NUTSDS
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_NUTSDS_GRAM  = ounces_to_gram_conversion(DR1T_PF_NUTSDS))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_NUTSDS_GRAM, .after = DR1T_PF_NUTSDS)
+attr(merged_list$FPED$DR1T_PF_NUTSDS_GRAM, "label") <- "Peanuts, tree nuts, and seeds, excludes coconut (grams)" 
+
+#DR1T_PF_LEGUMES 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_LEGUMES_GRAM  = ounces_to_gram_conversion(DR1T_PF_LEGUMES))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_LEGUMES_GRAM, .after = DR1T_PF_LEGUMES)
+attr(merged_list$FPED$DR1T_PF_LEGUMES_GRAM, "label") <- "Legumes computed as protein foods (grams)" 
+
+#DR1T_PF_TOTAL 
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_PF_TOTAL_GRAM   = ounces_to_gram_conversion(DR1T_PF_TOTAL ))
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_PF_TOTAL_GRAM , .after = DR1T_PF_TOTAL )
+attr(merged_list$FPED$DR1T_PF_TOTAL_GRAM , "label") <- "Total meat, poultry, seafood, organ meats, cured meat, eggs, soy, and nuts and seeds; excludes legumes (grams)" 
+
+#DR1T_F_CITMLB  = intact fruits of citurs melons and berries
+DR1T_F_CITMLB_CONVERTER <- 163.38
+merged_list$FPED$DR1T_F_CITMLB_GRAM <- NULL
+merged_list$FPED$DR1T_F_CITMLB_GRAM <- merged_list$FPED$DR1T_F_CITMLB * DR1T_F_CITMLB_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_CITMLB_GRAM , .after = DR1T_F_CITMLB)
+attr(merged_list$FPED$DR1T_F_CITMLB_GRAM , "label") <- "Intact fruits (whole or cut) of citrus, melons, and berries (grams)" 
+
+
+#DR1T_F_OTHER  = intact fruits, excluding of citurs melons and berries
+DR1T_F_OTHER_CONVERTER <- 149.66
+merged_list$FPED$DR1T_F_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_F_OTHER_GRAM <- merged_list$FPED$DR1T_F_OTHER * DR1T_F_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_OTHER_GRAM , .after = DR1T_F_OTHER)
+attr(merged_list$FPED$DR1T_F_OTHER_GRAM , "label") <- "Intact fruits (whole or cut); excluding citrus, melons, and berries  (grams)" 
+
+
+#DR1T_F_JUICE  = Fuit jucies, citrus and non citrus
+DR1T_F_JUICE_CONVERTER <- 250
+merged_list$FPED$DR1T_F_JUICE_GRAM <- NULL
+merged_list$FPED$DR1T_F_JUICE_GRAM <- merged_list$FPED$DR1T_F_JUICE * DR1T_F_JUICE_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_JUICE_GRAM , .after = DR1T_F_JUICE)
+attr(merged_list$FPED$DR1T_F_JUICE_GRAM , "label") <- "Fruit juices, citrus and non citrus (grams)" 
+
+#DR1T_F_TOTAL  = Total intact or cut fruits and fruit juices
+DR1T_F_TOTAL_CONVERTER <- 159.92
+merged_list$FPED$DR1T_F_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_F_TOTAL_GRAM  <- merged_list$FPED$DR1T_F_TOTAL * DR1T_F_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_F_TOTAL_GRAM  , .after = DR1T_F_TOTAL)
+attr(merged_list$FPED$DR1T_F_TOTAL_GRAM  , "label") <- "Total intact or cut fruits and fruit juices (grams)" 
+
+
+#DR1T_V_DRKGR = dark green vegetables
+DR1T_V_DRKGR_CONVERTER <- 113.02
+merged_list$FPED$DR1T_V_DRKGR_GRAM <- NULL
+merged_list$FPED$DR1T_V_DRKGR_GRAM  <- merged_list$FPED$DR1T_V_DRKGR * DR1T_V_DRKGR_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_DRKGR_GRAM  , .after = DR1T_V_DRKGR)
+attr(merged_list$FPED$DR1T_V_DRKGR_GRAM  , "label") <- "Dark green vegetables (grams)" 
+
+
+#DR1T_V_REDOR_TOMATO = Tomatoes and tomato products
+DR1T_V_REDOR_TOMATO_CONVERTER <- 176.25
+merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM  <- merged_list$FPED$DR1T_V_REDOR_TOMATO * DR1T_V_REDOR_TOMATO_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_TOMATO_GRAM  , .after = DR1T_V_REDOR_TOMATO)
+attr(merged_list$FPED$DR1T_V_REDOR_TOMATO_GRAM  , "label") <- "Tomatoes and tomato products (grams)" 
+
+
+#DR1T_V_REDOR_OTHER = Other red and orange vegetables, excluding tomatoes and tomato products
+DR1T_V_REDOR_OTHER_CONVERTER <- 173.44
+merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM  <- merged_list$FPED$DR1T_V_REDOR_OTHER * DR1T_V_REDOR_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_OTHER_GRAM  , .after = DR1T_V_REDOR_OTHER)
+attr(merged_list$FPED$DR1T_V_REDOR_OTHER_GRAM  , "label") <- "Other red and orange vegetables, excluding tomatoes and tomato products (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_REDOR_TOTAL = "Total red and orange vegetables (tomatoes + other red and orange)
+DR1T_V_REDOR_TOTAL_CONVERTER <- 174.38
+merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_REDOR_TOTAL * DR1T_V_REDOR_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_REDOR_TOTAL_GRAM  , .after = DR1T_V_REDOR_TOTAL)
+attr(merged_list$FPED$DR1T_V_REDOR_TOTAL_GRAM  , "label") <- "Total red and orange vegetables (tomatoes + other red and orange) (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_STARCHY_POTATO  = White potatoes
+DR1T_V_STARCHY_POTATO_CONVERTER <- 147.5
+merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_POTATO * DR1T_V_STARCHY_POTATO_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_POTATO_GRAM  , .after = DR1T_V_STARCHY_POTATO)
+attr(merged_list$FPED$DR1T_V_STARCHY_POTATO_GRAM  , "label") <- "White potatoes (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_STARCHY_OTHER = Other starchy vegetables, excluding white potatoes
+DR1T_V_STARCHY_OTHER_CONVERTER <- 154.29
+merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_OTHER * DR1T_V_STARCHY_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_OTHER_GRAM  , .after = DR1T_V_STARCHY_OTHER)
+attr(merged_list$FPED$DR1T_V_STARCHY_OTHER_GRAM  , "label") <- "Other starchy vegetables, excluding white potatoes (grams)" 
+str(merged_list$FPED)
+
+#DR1T_V_STARCHY_TOTAL = Total starchy vegetables (white potatoes + other starchy)
+DR1T_V_STARCHY_TOTAL_CONVERTER <- 153.54
+merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_STARCHY_TOTAL * DR1T_V_STARCHY_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_STARCHY_TOTAL_GRAM  , .after = DR1T_V_STARCHY_TOTAL)
+attr(merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM  , "label") <- "Total starchy vegetables (white potatoes + other starchy) (grams)" 
+str(merged_list$FPED)
+
+#DR1T_V_OTHER = Other vegetables not in the vegetable components listed above
+DR1T_V_OTHER_CONVERTER <- 131.88
+merged_list$FPED$DR1T_V_OTHER_GRAM <- NULL
+merged_list$FPED$DR1T_V_OTHER_GRAM  <- merged_list$FPED$DR1T_V_OTHER * DR1T_V_OTHER_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_OTHER_GRAM  , .after = DR1T_V_OTHER)
+attr(merged_list$FPED$DR1T_V_OTHER_GRAM  , "label") <- "Other vegetables not in the vegetable components listed above (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_TOTAL = Total dark green, red and orange, starchy, and other vegetables; excludes legumes
+DR1T_V_TOTAL_CONVERTER <- 134.62
+merged_list$FPED$DR1T_V_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_V_TOTAL_GRAM  <- merged_list$FPED$DR1T_V_TOTAL * DR1T_V_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_TOTAL_GRAM  , .after = DR1T_V_TOTAL)
+attr(merged_list$FPED$DR1T_V_TOTAL_GRAM  , "label") <- "Total dark green, red and orange, starchy, and other vegetables; excludes legumes (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_V_LEGUMES = Legumes computed as vegetables
+DR1T_V_LEGUMES_CONVERTER <- 175.95
+merged_list$FPED$DR1T_V_LEGUMES_GRAM <- NULL
+merged_list$FPED$DR1T_V_LEGUMES_GRAM  <- merged_list$FPED$DR1T_V_LEGUMES * DR1T_V_LEGUMES_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_V_LEGUMES_GRAM  , .after = DR1T_V_LEGUMES)
+attr(merged_list$FPED$DR1T_V_LEGUMES_GRAM  , "label") <- "Legumes computed as vegetables (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_D_MILK = Fluid milk and calcium fortified soy milk
+DR1T_D_MILK_CONVERTER <- 227.86
+merged_list$FPED$DR1T_D_MILK_GRAM <- NULL
+merged_list$FPED$DR1T_D_MILK_GRAM  <- merged_list$FPED$DR1T_D_MILK * DR1T_D_MILK_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_MILK_GRAM  , .after = DR1T_D_MILK)
+attr(merged_list$FPED$DR1T_D_MILK_GRAM  , "label") <- "Fluid milk and calcium fortified soy milk (grams)" 
+str(merged_list$FPED)
+
+#DR1T_D_YOGURT =Yogurt 
+DR1T_D_YOGURT_CONVERTER <- 245
+merged_list$FPED$DR1T_D_YOGURT_GRAM <- NULL
+merged_list$FPED$DR1T_D_YOGURT_GRAM  <- merged_list$FPED$DR1T_D_YOGURT * DR1T_D_YOGURT_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_YOGURT_GRAM  , .after = DR1T_D_YOGURT)
+attr(merged_list$FPED$DR1T_D_YOGURT_GRAM  , "label") <- "Yogurt (grams)" 
+str(merged_list$FPED)
+
+#DR1T_D_CHEESE= Cheese
+DR1T_D_CHEESE_CONVERTER <- 59.12
+merged_list$FPED$DR1T_D_CHEESE_GRAM <- NULL
+merged_list$FPED$DR1T_D_CHEESE_GRAM  <- merged_list$FPED$DR1T_D_CHEESE * DR1T_D_CHEESE_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_CHEESE_GRAM  , .after = DR1T_D_CHEESE)
+attr(merged_list$FPED$DR1T_D_CHEESE_GRAM  , "label") <- "Cheese (grams)" 
+str(merged_list$FPED)
+
+#DR1T_D_TOTAL  = Total milk, yogurt, cheese, and whey
+DR1T_D_TOTAL_CONVERTER <- 79.22
+merged_list$FPED$DR1T_D_TOTAL_GRAM <- NULL
+merged_list$FPED$DR1T_D_TOTAL_GRAM  <- merged_list$FPED$DR1T_D_TOTAL * DR1T_D_TOTAL_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_D_TOTAL_GRAM  , .after = DR1T_D_TOTAL)
+attr(merged_list$FPED$DR1T_D_TOTAL_GRAM  , "label") <- "Total milk, yogurt, cheese, and whey (grams)" 
+str(merged_list$FPED)
+
+
+#DR1T_ADD_SUGARS = Foods defined as added sugars
+DR1T_ADD_SUGARS_CONVERTER <- 6.08
+merged_list$FPED$DR1T_ADD_SUGARS_GRAM <- NULL
+merged_list$FPED$DR1T_ADD_SUGARS_GRAM  <- merged_list$FPED$DR1T_ADD_SUGARS * DR1T_ADD_SUGARS_CONVERTER
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_ADD_SUGARS_GRAM  , .after = DR1T_ADD_SUGARS)
+attr(merged_list$FPED$DR1T_ADD_SUGARS_GRAM  , "label") <- "Foods defined as added sugars (grams)" 
+str(merged_list$FPED)
+
+
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Seafood_Sub = DR1T_PF_SEAFD_HI_GRAM +  DR1T_PF_SEAFD_LOW_GRAM)
+
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Red_Processed_Meat =  DR1T_PF_MEAT_GRAM+ DR1T_PF_CUREDMEAT_GRAM + DR1T_PF_ORGAN_GRAM )
+merged_list$FPED <- merged_list$FPED %>%
+  relocate(DR1T_Total_Red_Processed_Meat, .after = DR1T_PF_ORGAN_GRAM)
+attr(merged_list$FPED$DR1T_Total_Red_Processed_Meat  , "label") <- "Total red and processed meats consumed (grams)" 
+
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Veg_without_Starch_Leg =  DR1T_V_REDOR_TOTAL_GRAM + DR1T_V_DRKGR_GRAM + DR1T_V_OTHER_GRAM)
+str(merged_list$FPED)
+
+
+merged_list$FPED <- merged_list$FPED %>%
+  mutate(DR1T_Total_Fruit_without_juice =  DR1T_F_CITMLB_GRAM + DR1T_F_OTHER_GRAM)
+str(merged_list$FPED)
+
+```
+
+## Inserting PHDI code, without a changed sugar variable
+
+```{r}
+PHDI_V2 = function(SERV_DATA, RESPONDENTID, GENDER, TOTALKCAL_PHDI, WGRAIN_SERV_PHDI, STARCHY_VEG_SERV_PHDI, VEG_SERV_PHDI, FRT_SERV_PHDI, DAIRY_SERV_PHDI, REDPROC_MEAT_SERV_PHDI, POULTRY_SERV_PHDI, EGG_SERV_PHDI, FISH_SERV_PHDI, NUTS_SERV_PHDI, LEGUMES_SERV_PHDI, SOY_SERV_PHDI, ADDED_FAT_UNSAT_SERV_PHDI, ADDED_FAT_SAT_TRANS_SERV_PHDI, ADDED_SUGAR_SERV_PHDI) {
+    PHDI_MIN = 0
+    PHDI_MAX = 10
+    PHDI_MAX_2 = 5
+    PHDI_MIN_WGRAIN_F_SERV = 0
+    PHDI_MAX_WGRAIN_F_SERV = 75
+    PHDI_MIN_WGRAIN_M_SERV = 0
+    PHDI_MAX_WGRAIN_M_SERV = 90
+    PHDI_MIN_STARCHY_VEG_SERV = 200
+    PHDI_MAX_STARCHY_VEG_SERV = 50
+    PHDI_MIN_VEG_SERV = 0
+    PHDI_MAX_VEG_SERV = 300
+    PHDI_MIN_FRT_SERV = 0
+    PHDI_MAX_FRT_SERV = 200
+    PHDI_MIN_DAIRY_SERV = 1000
+    PHDI_MAX_DAIRY_SERV = 250
+    PHDI_MIN_REDPROC_MEAT_SERV = 100
+    PHDI_MAX_REDPROC_MEAT_SERV = 14
+    PHDI_MIN_POULTRY_SERV = 100
+    PHDI_MAX_POULTRY_SERV = 29
+    PHDI_MIN_EGG_SERV = 120
+    PHDI_MAX_EGG_SERV = 13
+    PHDI_MIN_FISH_SERV = 0
+    PHDI_MAX_FISH_SERV = 28
+    PHDI_MIN_NUTS_SERV = 0
+    PHDI_MAX_NUTS_SERV = 50
+    PHDI_MIN_LEGUMES_SERV = 0
+    PHDI_MAX_LEGUMES_SERV = 100
+    PHDI_MIN_SOY_SERV = 0
+    PHDI_MAX_SOY_SERV = 50
+    PHDI_MIN_ADDED_FAT_UNSAT_SERV = 3.5
+    PHDI_MAX_ADDED_FAT_UNSAT_SERV = 21
+    PHDI_MIN_ADDED_FAT_SAT_TRANS_SERV = 10
+    PHDI_MAX_ADDED_FAT_SAT_TRANS_SERV = 0
+    PHDI_MIN_ADDED_SUGAR_SERV = 25
+    PHDI_MAX_ADDED_SUGAR_SERV = 5
+
+    SCORE_HEALTHY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+        case_when(
+            actual_serv >= max_serv ~ max_score,
+            actual_serv <= min_serv ~ min_score,
+            TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+        )
+    }
+
+    SCORE_UNHEALTHY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+        case_when(
+            actual_serv >= min_serv ~ min_score,
+            actual_serv <= max_serv ~ max_score,
+            TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+        )
+    }
+
+    SERV_DATA = SERV_DATA %>%
+        mutate(
+            ADDED_FAT_UNSAT_SERV_PHDI = (ADDED_FAT_UNSAT_SERV_PHDI * 9 / TOTALKCAL_PHDI) * 100,
+            ADDED_FAT_SAT_TRANS_SERV_PHDI = (ADDED_FAT_SAT_TRANS_SERV_PHDI * 9 / TOTALKCAL_PHDI) * 100,
+            ADDED_SUGAR_SERV_PHDI = (ADDED_SUGAR_SERV_PHDI * 4 / TOTALKCAL_PHDI) * 100
+        )
+    SERV_DATA %>%
+        dplyr::mutate(
+            RESPONDENTID = RESPONDENTID,
+            GENDER = GENDER,
+            TOTALKCAL_PHDI = TOTALKCAL_PHDI,
+            PHDI_WGRAIN = case_when(
+                # GENDER = 2 is female
+                GENDER == 2 & WGRAIN_SERV_PHDI >= PHDI_MAX_WGRAIN_F_SERV ~ PHDI_MAX,
+                GENDER == 2 & WGRAIN_SERV_PHDI <= PHDI_MIN_WGRAIN_F_SERV ~ PHDI_MIN,
+                GENDER == 2 & WGRAIN_SERV_PHDI > PHDI_MIN_WGRAIN_F_SERV & WGRAIN_SERV_PHDI < PHDI_MAX_WGRAIN_F_SERV ~ PHDI_MIN + (WGRAIN_SERV_PHDI - PHDI_MIN_WGRAIN_F_SERV) * PHDI_MAX / (PHDI_MAX_WGRAIN_F_SERV - PHDI_MIN_WGRAIN_F_SERV),
+                GENDER == 1 & WGRAIN_SERV_PHDI >= PHDI_MAX_WGRAIN_M_SERV ~ PHDI_MAX,
+                GENDER == 1 & WGRAIN_SERV_PHDI <= PHDI_MIN_WGRAIN_M_SERV ~ PHDI_MIN,
+                GENDER == 1 & WGRAIN_SERV_PHDI > PHDI_MIN_WGRAIN_M_SERV & WGRAIN_SERV_PHDI < PHDI_MAX_WGRAIN_M_SERV ~ PHDI_MIN + (WGRAIN_SERV_PHDI - PHDI_MIN_WGRAIN_M_SERV) * PHDI_MAX / (PHDI_MAX_WGRAIN_M_SERV - PHDI_MIN_WGRAIN_M_SERV),
+            ),
+            PHDI_STARCHY_VEG = SCORE_UNHEALTHY(STARCHY_VEG_SERV_PHDI, PHDI_MIN_STARCHY_VEG_SERV, PHDI_MAX_STARCHY_VEG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_VEG = SCORE_HEALTHY(VEG_SERV_PHDI, PHDI_MIN_VEG_SERV, PHDI_MAX_VEG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_FRT = SCORE_HEALTHY(FRT_SERV_PHDI, PHDI_MIN_FRT_SERV, PHDI_MAX_FRT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_DAIRY = SCORE_UNHEALTHY(DAIRY_SERV_PHDI, PHDI_MIN_DAIRY_SERV, PHDI_MAX_DAIRY_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_REDPROC_MEAT = SCORE_UNHEALTHY(REDPROC_MEAT_SERV_PHDI, PHDI_MIN_REDPROC_MEAT_SERV, PHDI_MAX_REDPROC_MEAT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_POULTRY = SCORE_UNHEALTHY(POULTRY_SERV_PHDI, PHDI_MIN_POULTRY_SERV, PHDI_MAX_POULTRY_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_EGG = SCORE_UNHEALTHY(EGG_SERV_PHDI, PHDI_MIN_EGG_SERV, PHDI_MAX_EGG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_FISH = SCORE_HEALTHY(FISH_SERV_PHDI, PHDI_MIN_FISH_SERV, PHDI_MAX_FISH_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_NUTS = SCORE_HEALTHY(NUTS_SERV_PHDI, PHDI_MIN_NUTS_SERV, PHDI_MAX_NUTS_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_LEGUMES = SCORE_HEALTHY(LEGUMES_SERV_PHDI, PHDI_MIN_LEGUMES_SERV, PHDI_MAX_LEGUMES_SERV, PHDI_MIN, PHDI_MAX_2),
+            PHDI_SOY = SCORE_HEALTHY(SOY_SERV_PHDI, PHDI_MIN_SOY_SERV, PHDI_MAX_SOY_SERV, PHDI_MIN, PHDI_MAX_2),
+            PHDI_ADDED_FAT_UNSAT = SCORE_HEALTHY(ADDED_FAT_UNSAT_SERV_PHDI, PHDI_MIN_ADDED_FAT_UNSAT_SERV, PHDI_MAX_ADDED_FAT_UNSAT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ADDED_FAT_SAT = SCORE_UNHEALTHY(ADDED_FAT_SAT_TRANS_SERV_PHDI, PHDI_MIN_ADDED_FAT_SAT_TRANS_SERV, PHDI_MAX_ADDED_FAT_SAT_TRANS_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ADDED_SUGAR = SCORE_UNHEALTHY(ADDED_SUGAR_SERV_PHDI, PHDI_MIN_ADDED_SUGAR_SERV, PHDI_MAX_ADDED_SUGAR_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ALL = PHDI_WGRAIN + PHDI_STARCHY_VEG + PHDI_VEG + PHDI_FRT + PHDI_DAIRY + PHDI_REDPROC_MEAT + PHDI_POULTRY + PHDI_EGG + PHDI_FISH + PHDI_NUTS + PHDI_LEGUMES + PHDI_SOY + PHDI_ADDED_FAT_UNSAT + PHDI_ADDED_FAT_SAT + PHDI_ADDED_SUGAR
+        ) %>%
+        dplyr::select(RESPONDENTID, GENDER, PHDI_ALL, TOTALKCAL_PHDI, PHDI_WGRAIN, PHDI_STARCHY_VEG, PHDI_VEG, PHDI_FRT, PHDI_DAIRY, PHDI_REDPROC_MEAT, PHDI_POULTRY, PHDI_EGG, PHDI_FISH, PHDI_NUTS, PHDI_LEGUMES, PHDI_SOY, PHDI_ADDED_FAT_UNSAT, PHDI_ADDED_FAT_SAT, PHDI_ADDED_SUGAR)
+}
+PHDI_list_normal_sugar <- PHDI_V2(merged_list$FPED, merged_list$FPED$SEQN, merged_list$FPED$RIDAGEYR, merged_list$NUTRIENT$DR1TKCAL, merged_list$FPED$DR1T_G_WHOLE_GRAM, merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM, merged_list$FPED$DR1T_Total_Veg_without_Starch_Leg, merged_list$FPED$DR1T_Total_Fruit_without_juice, merged_list$FPED$DR1T_D_TOTAL_GRAM, merged_list$FPED$DR1T_Total_Red_Processed_Meat, merged_list$FPED$DR1T_PF_POULT_GRAM, merged_list$FPED$DR1T_PF_EGGS_GRAM, merged_list$FPED$DR1T_Total_Seafood_Sub, merged_list$FPED$DR1T_PF_NUTSDS_GRAM, merged_list$FPED$DR1T_V_LEGUMES_GRAM, merged_list$FPED$DR1T_PF_SOY_GRAM, merged_list$FPED$DR1T_OILS, merged_list$FPED$DR1T_SOLID_FATS, merged_list$FPED$DR1T_ADD_SUGARS_GRAM)
+
+mean(PHDI_list_normal_sugar$PHDI_ALL, na.rm = T)
+```
+
+## PHDI with the added sugars from other foods /drinks
+
+```{r}
+# Columns to sum up
+columns_to_sum <- c("DR1T_F_TOTAL_GRAM", "DR1T_V_DRKGR_GRAM", "DR1T_V_REDOR_TOTAL_GRAM", 
+                    "DR1T_V_STARCHY_TOTAL_GRAM", "DR1T_V_OTHER_GRAM", "DR1T_PF_LEGUMES_GRAM", 
+                    "DR1T_G_WHOLE_GRAM", "DR1T_PF_MEAT_GRAM", "DR1T_PF_CUREDMEAT_GRAM", 
+                    "DR1T_PF_ORGAN_GRAM", "DR1T_PF_POULT_GRAM", "DR1T_PF_SEAFD_HI_GRAM", 
+                    "DR1T_PF_SEAFD_LOW_GRAM", "DR1T_PF_EGGS_GRAM", "DR1T_PF_NUTSDS_GRAM", 
+                    "DR1T_D_TOTAL_GRAM", "DR1T_OILS", "DR1T_SOLID_FATS", "DR1T_ADD_SUGARS_GRAM")
+
+# Perform the sum
+total_per_day <- rowSums(merged_list$FPED[, columns_to_sum], na.rm = TRUE)
+
+# Add the new variable to the tibble
+merged_list$FPED <- cbind(merged_list$FPED, DR1T_Total_Grams_Per_Day = total_per_day)
+attr(merged_list$FPED$DR1T_Total_Grams_Per_Day  , "label") <- "Total grams consumed per day (grams)" 
+str(merged_list$FPED)
+summary(merged_list$FPED$DR1T_Total_Grams_Per_Day, na.rm = T)
+
+```
+
+#### Updating the sugar content of free sugars into the merged_list\$FPED sugar variable
+
+##### 61201010
+
+```{r}
+# Find the rows where the Food code number 61201010 is present in the column 
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61201010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.1/100)
+
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+
+print(rows_with_food_code)
+
+
+glimpse(rows_with_food_code$DR1I_ADD_SUGARS)
+glimpse(merged_list$FPED %>% filter(SEQN == 32113))
+#for SEQN number = 32113: 
+## The sugar added from the grapefruit juice is = 22.49.
+### The sugar content before for that person was : 114
+#### the sugar content after adding the sugar form the grapefruit juice is: 136.4952 
+##### seems to work for the Grapefruit juice!!
+##### double checked other SEQN numbers that did not have to food code / did not consume grapefruit juice --> nothing was changed in the sugar variable for that SEQN! 
+
+```
+
+##### 61201020
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61201020, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (7.42/100)
+
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61201620
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61201620, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.55/100)
+print(rows_with_food_code)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+
+glimpse(merged_list$FPED %>% filter(SEQN == 35454)) 
+```
+
+##### 61210000
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210000, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.18/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61210010
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.08/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61210220
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210220, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.18/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61210250
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210250, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.18/100) #same as above
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61210620
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210620, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.47/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61210820
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61210820, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.48/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61213220
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61213220, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.9/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 61213800
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 61213800, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (8.18/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64100100
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64100100, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (10.4/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64100110
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64100110, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (10.9/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64100200
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64100200, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.04/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64101010
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64101010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.62/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64104010
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64104010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (10.1/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64104600
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64104600, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (7.7/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64105400
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64105400, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (3.41/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64116020
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64116020, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (14.2/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64120010
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64120010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (13.9/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64121000
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64121000, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (13.4/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64124020
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64124020, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (9.98/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64132010
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64132010, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (16.4/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64132500
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64132500, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (7.7/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 64133100
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 64133100, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (6.2/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 75200700
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 75200700, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (3.75/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 91406500
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 91406500, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (42/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+##### 92433000
+
+```{r}
+rows_with_food_code <- merged_list$FPED_IND[merged_list$FPED_IND$DR1IFDCD == 92433000, ]
+rows_with_food_code$DR1I_ADD_SUGARS <- rows_with_food_code$DR1IGRMS * (6.38/100)
+
+for (i in 1:nrow(rows_with_food_code)) {
+  row_index <- which(merged_list$FPED$SEQN == rows_with_food_code$SEQN[i])
+  merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] <- 
+    merged_list$FPED[row_index, "DR1T_ADD_SUGARS_GRAM"] + rows_with_food_code$DR1I_ADD_SUGARS[i]
+}
+```
+
+```{r}
+PHDI_V2 = function(SERV_DATA, RESPONDENTID, GENDER, TOTALKCAL_PHDI, WGRAIN_SERV_PHDI, STARCHY_VEG_SERV_PHDI, VEG_SERV_PHDI, FRT_SERV_PHDI, DAIRY_SERV_PHDI, REDPROC_MEAT_SERV_PHDI, POULTRY_SERV_PHDI, EGG_SERV_PHDI, FISH_SERV_PHDI, NUTS_SERV_PHDI, LEGUMES_SERV_PHDI, SOY_SERV_PHDI, ADDED_FAT_UNSAT_SERV_PHDI, ADDED_FAT_SAT_TRANS_SERV_PHDI, ADDED_SUGAR_SERV_PHDI) {
+    PHDI_MIN = 0
+    PHDI_MAX = 10
+    PHDI_MAX_2 = 5
+    PHDI_MIN_WGRAIN_F_SERV = 0
+    PHDI_MAX_WGRAIN_F_SERV = 75
+    PHDI_MIN_WGRAIN_M_SERV = 0
+    PHDI_MAX_WGRAIN_M_SERV = 90
+    PHDI_MIN_STARCHY_VEG_SERV = 200
+    PHDI_MAX_STARCHY_VEG_SERV = 50
+    PHDI_MIN_VEG_SERV = 0
+    PHDI_MAX_VEG_SERV = 300
+    PHDI_MIN_FRT_SERV = 0
+    PHDI_MAX_FRT_SERV = 200
+    PHDI_MIN_DAIRY_SERV = 1000
+    PHDI_MAX_DAIRY_SERV = 250
+    PHDI_MIN_REDPROC_MEAT_SERV = 100
+    PHDI_MAX_REDPROC_MEAT_SERV = 14
+    PHDI_MIN_POULTRY_SERV = 100
+    PHDI_MAX_POULTRY_SERV = 29
+    PHDI_MIN_EGG_SERV = 120
+    PHDI_MAX_EGG_SERV = 13
+    PHDI_MIN_FISH_SERV = 0
+    PHDI_MAX_FISH_SERV = 28
+    PHDI_MIN_NUTS_SERV = 0
+    PHDI_MAX_NUTS_SERV = 50
+    PHDI_MIN_LEGUMES_SERV = 0
+    PHDI_MAX_LEGUMES_SERV = 100
+    PHDI_MIN_SOY_SERV = 0
+    PHDI_MAX_SOY_SERV = 50
+    PHDI_MIN_ADDED_FAT_UNSAT_SERV = 3.5
+    PHDI_MAX_ADDED_FAT_UNSAT_SERV = 21
+    PHDI_MIN_ADDED_FAT_SAT_TRANS_SERV = 10
+    PHDI_MAX_ADDED_FAT_SAT_TRANS_SERV = 0
+    PHDI_MIN_ADDED_SUGAR_SERV = 25
+    PHDI_MAX_ADDED_SUGAR_SERV = 5
+
+    SCORE_HEALTHY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+        case_when(
+            actual_serv >= max_serv ~ max_score,
+            actual_serv <= min_serv ~ min_score,
+            TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+        )
+    }
+
+    SCORE_UNHEALTHY = function(actual_serv, min_serv, max_serv, min_score, max_score) {
+        case_when(
+            actual_serv >= min_serv ~ min_score,
+            actual_serv <= max_serv ~ max_score,
+            TRUE ~ min_score + (actual_serv - min_serv) * max_score / (max_serv - min_serv)
+        )
+    }
+
+    SERV_DATA = SERV_DATA %>%
+        mutate(
+            ADDED_FAT_UNSAT_SERV_PHDI = (ADDED_FAT_UNSAT_SERV_PHDI * 9 / TOTALKCAL_PHDI) * 100,
+            ADDED_FAT_SAT_TRANS_SERV_PHDI = (ADDED_FAT_SAT_TRANS_SERV_PHDI * 9 / TOTALKCAL_PHDI) * 100,
+            ADDED_SUGAR_SERV_PHDI = (ADDED_SUGAR_SERV_PHDI * 4 / TOTALKCAL_PHDI) * 100
+        )
+
+    SERV_DATA %>%
+        dplyr::mutate(
+            RESPONDENTID = RESPONDENTID,
+            GENDER = GENDER,
+            TOTALKCAL_PHDI = TOTALKCAL_PHDI,
+            PHDI_WGRAIN = case_when(
+                # GENDER = 2 is female
+                GENDER == 2 & WGRAIN_SERV_PHDI >= PHDI_MAX_WGRAIN_F_SERV ~ PHDI_MAX,
+                GENDER == 2 & WGRAIN_SERV_PHDI <= PHDI_MIN_WGRAIN_F_SERV ~ PHDI_MIN,
+                GENDER == 2 & WGRAIN_SERV_PHDI > PHDI_MIN_WGRAIN_F_SERV & WGRAIN_SERV_PHDI < PHDI_MAX_WGRAIN_F_SERV ~ PHDI_MIN + (WGRAIN_SERV_PHDI - PHDI_MIN_WGRAIN_F_SERV) * PHDI_MAX / (PHDI_MAX_WGRAIN_F_SERV - PHDI_MIN_WGRAIN_F_SERV),
+                GENDER == 1 & WGRAIN_SERV_PHDI >= PHDI_MAX_WGRAIN_M_SERV ~ PHDI_MAX,
+                GENDER == 1 & WGRAIN_SERV_PHDI <= PHDI_MIN_WGRAIN_M_SERV ~ PHDI_MIN,
+                GENDER == 1 & WGRAIN_SERV_PHDI > PHDI_MIN_WGRAIN_M_SERV & WGRAIN_SERV_PHDI < PHDI_MAX_WGRAIN_M_SERV ~ PHDI_MIN + (WGRAIN_SERV_PHDI - PHDI_MIN_WGRAIN_M_SERV) * PHDI_MAX / (PHDI_MAX_WGRAIN_M_SERV - PHDI_MIN_WGRAIN_M_SERV),
+            ),
+            PHDI_STARCHY_VEG = SCORE_UNHEALTHY(STARCHY_VEG_SERV_PHDI, PHDI_MIN_STARCHY_VEG_SERV, PHDI_MAX_STARCHY_VEG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_VEG = SCORE_HEALTHY(VEG_SERV_PHDI, PHDI_MIN_VEG_SERV, PHDI_MAX_VEG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_FRT = SCORE_HEALTHY(FRT_SERV_PHDI, PHDI_MIN_FRT_SERV, PHDI_MAX_FRT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_DAIRY = SCORE_UNHEALTHY(DAIRY_SERV_PHDI, PHDI_MIN_DAIRY_SERV, PHDI_MAX_DAIRY_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_REDPROC_MEAT = SCORE_UNHEALTHY(REDPROC_MEAT_SERV_PHDI, PHDI_MIN_REDPROC_MEAT_SERV, PHDI_MAX_REDPROC_MEAT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_POULTRY = SCORE_UNHEALTHY(POULTRY_SERV_PHDI, PHDI_MIN_POULTRY_SERV, PHDI_MAX_POULTRY_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_EGG = SCORE_UNHEALTHY(EGG_SERV_PHDI, PHDI_MIN_EGG_SERV, PHDI_MAX_EGG_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_FISH = SCORE_HEALTHY(FISH_SERV_PHDI, PHDI_MIN_FISH_SERV, PHDI_MAX_FISH_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_NUTS = SCORE_HEALTHY(NUTS_SERV_PHDI, PHDI_MIN_NUTS_SERV, PHDI_MAX_NUTS_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_LEGUMES = SCORE_HEALTHY(LEGUMES_SERV_PHDI, PHDI_MIN_LEGUMES_SERV, PHDI_MAX_LEGUMES_SERV, PHDI_MIN, PHDI_MAX_2),
+            PHDI_SOY = SCORE_HEALTHY(SOY_SERV_PHDI, PHDI_MIN_SOY_SERV, PHDI_MAX_SOY_SERV, PHDI_MIN, PHDI_MAX_2),
+            PHDI_ADDED_FAT_UNSAT = SCORE_HEALTHY(ADDED_FAT_UNSAT_SERV_PHDI, PHDI_MIN_ADDED_FAT_UNSAT_SERV, PHDI_MAX_ADDED_FAT_UNSAT_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ADDED_FAT_SAT = SCORE_UNHEALTHY(ADDED_FAT_SAT_TRANS_SERV_PHDI, PHDI_MIN_ADDED_FAT_SAT_TRANS_SERV, PHDI_MAX_ADDED_FAT_SAT_TRANS_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ADDED_SUGAR = SCORE_UNHEALTHY(ADDED_SUGAR_SERV_PHDI, PHDI_MIN_ADDED_SUGAR_SERV, PHDI_MAX_ADDED_SUGAR_SERV, PHDI_MIN, PHDI_MAX),
+            PHDI_ALL = PHDI_WGRAIN + PHDI_STARCHY_VEG + PHDI_VEG + PHDI_FRT + PHDI_DAIRY + PHDI_REDPROC_MEAT + PHDI_POULTRY + PHDI_EGG + PHDI_FISH + PHDI_NUTS + PHDI_LEGUMES + PHDI_SOY + PHDI_ADDED_FAT_UNSAT + PHDI_ADDED_FAT_SAT + PHDI_ADDED_SUGAR
+        ) %>%
+        dplyr::select(RESPONDENTID, GENDER, PHDI_ALL, TOTALKCAL_PHDI, PHDI_WGRAIN, PHDI_STARCHY_VEG, PHDI_VEG, PHDI_FRT, PHDI_DAIRY, PHDI_REDPROC_MEAT, PHDI_POULTRY, PHDI_EGG, PHDI_FISH, PHDI_NUTS, PHDI_LEGUMES, PHDI_SOY, PHDI_ADDED_FAT_UNSAT, PHDI_ADDED_FAT_SAT, PHDI_ADDED_SUGAR)
+}
+
+PHDI_list <- PHDI_V2(merged_list$FPED, merged_list$FPED$SEQN, merged_list$FPED$RIDAGEYR, merged_list$NUTRIENT$DR1TKCAL, merged_list$FPED$DR1T_G_WHOLE_GRAM, merged_list$FPED$DR1T_V_STARCHY_TOTAL_GRAM, merged_list$FPED$DR1T_Total_Veg_without_Starch_Leg, merged_list$FPED$DR1T_Total_Fruit_without_juice, merged_list$FPED$DR1T_D_TOTAL_GRAM, merged_list$FPED$DR1T_Total_Red_Processed_Meat, merged_list$FPED$DR1T_PF_POULT_GRAM, merged_list$FPED$DR1T_PF_EGGS_GRAM, merged_list$FPED$DR1T_Total_Seafood_Sub, merged_list$FPED$DR1T_PF_NUTSDS_GRAM, merged_list$FPED$DR1T_V_LEGUMES_GRAM, merged_list$FPED$DR1T_PF_SOY_GRAM, merged_list$FPED$DR1T_OILS, merged_list$FPED$DR1T_SOLID_FATS, merged_list$FPED$DR1T_ADD_SUGARS_GRAM)
+
+mean(PHDI_list$PHDI_ALL, na.rm = T)
+```
