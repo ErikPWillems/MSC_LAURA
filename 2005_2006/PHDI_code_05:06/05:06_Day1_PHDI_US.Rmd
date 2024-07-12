@@ -91,13 +91,13 @@ str(merged_list$FPED_IND)
 
 \--\> convert the different equivalents into grams to score the PHDI
 
-+------------+----------------------------------------+
-| 1 oz       | 28.349523125 g                         |
-|            |                                        |
-| 1 CUP      | dependent on the consistency / density |
-|            |                                        |
-| 1 tbsp     | dependent on the consistency / density |
-+------------+----------------------------------------+
++--------------+----------------------------------------+
+| 1 oz         | 28.349523125 g                         |
+|              |                                        |
+| 1 CUP        | dependent on the consistency / density |
+|              |                                        |
+| 1 tbsp       | dependent on the consistency / density |
++--------------+----------------------------------------+
 
 **FPED_IND** = for every individual participant, there is an entry for every food component they have eaten that day
 
@@ -1111,6 +1111,7 @@ PHDI_all_D1_Excess = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_N
 ```{r}
 summary(PHDI_all_D1)
 summary(PHDI_all_D1_Excess)
+sum(is.na(PHDI_all_D1_Excess))
 summary(PHDI_Added_Sugars)
 hist(PHDI_Added_Sugars)
 hist(PHDI_all_D1)
@@ -1273,11 +1274,18 @@ ggplot(PHDI_LAB_0506_D1, aes(x = PHDI_0506)) +
   facet_wrap(~ Gender) +
   labs(title = "Histogram of PHDI by Gender", x = "PHDI_0506", y = "Frequency")
 
+ggplot(PHDI_LAB_0506_D1, aes(x = as.factor(Gender), y = PHDI_0506)) +
+  geom_boxplot() +
+  scale_x_discrete(labels = c("1" = "Male", "2" = "Female")) +
+  labs(title = "PHDI Values by Gender", x = "Gender", y = "PHDI Values") +
+  theme_minimal()
+
+
 #testing if the variances are significantly different from one another or not --> p values greater than 0.05 means that there is no significant difference (=good)
 leveneTest(PHDI_0506 ~ as.factor(Gender), data = PHDI_LAB_0506_D1)
 #t.test to see if the differences between genders are significant
 t.test(PHDI_0506 ~ Gender, data = PHDI_LAB_0506_D1, var.equal = TRUE, na.action = na.omit)
-## turn out to be significant!
+## turn out to be significant! Females tend to eat more in accordance with the PHDI-US
 ```
 
 #### Differences between age groups
@@ -1311,18 +1319,6 @@ t.test(PHDI_0506_D1_D2$PHDI_0506_D1, PHDI_0506_D1_D2$PHDI_0506_D2, paired = TRUE
 ## here again we have a significance, that that the means are not equal to each other --> the mean is -0.6283875 units lower on day 1 compared to day 2. So when people had to report their dietary intake themselves, they had higher scores than when they did it with the help of nutrional professionals
 ```
 
-#### Differences between PHDI and PHDI-US
-
-Make sure to run the PHDI 0506 D1 file!!
-
-```{r}
-mean(PHDI_all_D1_Excess, na.rm = T) #48.29709
-mean(PHDI_list$PHDI_ALL, na.rm = T) #61.50738 #without the extra sugar content
-#there seems to be quite a difference, but a lot is not in the original PHDI! Refined grains, fruit juices, ...  eg
-## the mean with the changed added_sugar variable is then 59.7091
-t.test(PHDI_all_D1_Excess, PHDI_list$PHDI_ALL)
-```
-
 #### Differences between all the years
 
 ```{r}
@@ -1338,7 +1334,7 @@ t.test(PHDI_all_D1_Excess, PHDI_list$PHDI_ALL)
 
 #PHDI_all_years_Day1 <- lapply(PHDI_all_years_Day1, function(x) {
 #  c(x, rep(NA, max_length - length(x)))
-})
+#})
 #PHDI_all_years_Day1_df <- as.data.frame(PHDI_all_years_Day1)
 
 # DataFrame als CSV-Datei speichern
@@ -1415,12 +1411,12 @@ Therefore we need to information about:
 | High waist circumference                 | \>=102 centimeters in males\                                                                         |
 |                                          | \>=88 centimeters in females                                                                         |
 +------------------------------------------+------------------------------------------------------------------------------------------------------+
-| High blood pressure                      | Systolic blood pressure \>=130 and/or diastolic blood pressure \>=85 mm Hg \                         |
+| High blood pressure                      | Systolic blood pressure \>=130 and/or diastolic blood pressure \>=85 mm Hg\                          |
 |                                          | OR use of antihypertensive medication                                                                |
 +------------------------------------------+------------------------------------------------------------------------------------------------------+
 | Low high-density lipoprotein cholesterol | \<40 mg/dL (1.0 mmol/L) in males \<50 mg/dL (1.3 mmol/L) in females OR use of cholesterol medication |
 +------------------------------------------+------------------------------------------------------------------------------------------------------+
-| High fasting plasma glucose              | \>=100 mg/dL \                                                                                       |
+| High fasting plasma glucose              | \>=100 mg/dL\                                                                                        |
 |                                          | OR use of insulin or other antidiabetic medication                                                   |
 +------------------------------------------+------------------------------------------------------------------------------------------------------+
 | High fasting triglycerides               | \>= 150 mg/dL                                                                                        |
@@ -1432,6 +1428,8 @@ Therefore we need to information about:
 Blood_Pressure <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Examination_data_05:06/BPX_D.XPT")
 Body_Measurements <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Examination_data_05:06/BMX_D.XPT")
 F_Glucose <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Lab_data_05:06/GLU_D.XPT")
+TRYGL <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Lab_data_05:06/TRYGL_LDL_APO.XPT")
+HB1AC <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Lab_data_05:06/GHB_D.XPT")
 ```
 
 ### Adjusting the data
@@ -1451,142 +1449,68 @@ for (i in seq_along(TRYGL)) {
   TRYGL$Gender <- NA
   TRYGL$Gender[valid_matches] <- merged_list$FPED$RIAGENDR[matching_indices[valid_matches]]
 }
-#adding the gender column to the Body Measurements data
-for (i in seq_along(Body_Measurements)) {
-  matching_indices <- match(Body_Measurements$SEQN, merged_list$FPED$SEQN, nomatch = 0)
-  valid_matches <- matching_indices != 0
-  Body_Measurements$Gender <- NA
-  Body_Measurements$Gender[valid_matches] <- merged_list$FPED$RIAGENDR[matching_indices[valid_matches]]
-}
 ```
 
-### Setting the thresholds for the Metabolic Syndrome
+### Making a data frame with all the Lab data and the PHDI
 
 ```{r}
-Thresholds_Metabolic_Syndrome <- list(
-  Waist_C_Fem = 88,
-  Waist_C_Men = 102,
-  Systolic_BP = 130,
-  Diastolic_BP =  85,
-  LDL_Fem = 50,
-  LDL_Men = 40,
-  Plasma_Glucose = 100,
-  Plasma_Triglycerides = 150
-)
+df<- merge(PHDI_LAB_0506_D1, Body_Measurements[, c("SEQN", "BMXWAIST")], by= "SEQN" )
+df <- merge(df, Blood_Pressure [, c("SEQN", "Systolic_mean", "Diastolic_mean")], by = "SEQN")
+df <- merge(df, TRYGL[, c("SEQN", "LBDLDL")], by= "SEQN" )
+df <- merge(df, F_Glucose[, c("SEQN", "LBXGLU")], by= "SEQN" )
+df <- merge(df, TRYGL[, c("SEQN", "LBXTR")], by= "SEQN" )
+df <- merge(df, HB1AC[, c("SEQN", "LBXGH")], by= "SEQN" )
+str(df)
+
 ```
 
-## Code the list of participants with the metabolic syndrome
+### Plots to see if lab data variables correlate with PHDI
 
 ```{r}
-datasets_Metabolic_Syndrome <- list(
-  Waist_circumference = Body_Measurements$BMXWAIST,
-  Systolic_BP = Blood_Pressure$BPXSY2 + Blood_Pressure$BPXSY3, 
-  Diastolic_BP = Blood_Pressure$BPXDI2 + Blood_Pressure$BPXDI3,
-  LDL = TRYGL$LBDLDL,
-  Glucose = F_Glucose$LBXGLU,
-  Triglycerides = TRYGL$LBXTR
-)
-# Initialize the list to store participants meeting metabolic syndrome criteria
-participants_metabolic_syndrome <- list()
+#PHDI with waist
+ggplot(df, aes(PHDI_0506, BMXWAIST)) + geom_point(alpha= .2) + geom_smooth()
+ggplot(df, aes(Total_Cholesterol_mg, BMXWAIST)) + geom_point(alpha= .2) + geom_smooth()
 
-# Loop through each dataset and apply criteria
-for (i in seq_along(datasets_Metabolic_Syndrome)) {
-  data <- datasets_Metabolic_Syndrome[[i]]
-  col_name <- names(datasets_Metabolic_Syndrome)[i]
-  threshold <- Thresholds_Metabolic_Syndrome[[col_name]]
-  
-  # Determine gender-specific thresholds where applicable
-  if (grepl("Waist", col_name)) {
-    threshold <- ifelse(grepl("Fem", col_name), Thresholds_Metabolic_Syndrome$Waist_C_Fem, Thresholds_Metabolic_Syndrome$Waist_C_Men)
-  } else if (grepl("LDL", col_name)) {
-    threshold <- ifelse(grepl("Fem", col_name), Thresholds_Metabolic_Syndrome$LDL_Fem, Thresholds_Metabolic_Syndrome$LDL_Men)
-  }
-  
-  # Apply the specific criterion logic and update participants_metabolic_syndrome
-  meets_threshold <- data >= threshold
-  
-  for (seqn in Body_Measurements$SEQN) {
-    # Check if participant meets the current criterion
-    if (!is.na(meets_threshold[seqn]) && meets_threshold[seqn]) {
-      # Add or update participant's data in participants_metabolic_syndrome
-      if (is.null(participants_metabolic_syndrome[[as.character(seqn)]])) {
-        # Initialize participant's data
-        participants_metabolic_syndrome[[as.character(seqn)]] <- list(
-          SEQN = seqn,
-          Waist_circumference = ifelse(grepl("Waist", col_name), data[seqn], NA),
-          Systolic_BP = ifelse(grepl("Systolic_BP", col_name), data[seqn], NA),
-          Diastolic_BP = ifelse(grepl("Diastolic_BP", col_name), data[seqn], NA),
-          LDL = ifelse(grepl("LDL", col_name), data[seqn], NA),
-          Glucose = ifelse(grepl("Glucose", col_name), data[seqn], NA),
-          Triglycerides = ifelse(grepl("Triglycerides", col_name), data[seqn], NA)
-        )
-      } else {
-        # Update participant's data
-        participants_metabolic_syndrome[[as.character(seqn)]][[col_name]] <- data[seqn]
-      }
-    } else {
-      # Remove participant from the list if they don't meet the current criterion
-      if (!is.null(participants_metabolic_syndrome[[as.character(seqn)]])) {
-        participants_metabolic_syndrome[[as.character(seqn)]][[col_name]] <- NA
-      }
-    }
-  }
-}
+#PHDI with systolic high blood pressure
+ggplot(df, aes(PHDI_0506, Systolic_mean)) + geom_point(alpha= .2) + geom_smooth()
 
-# Remove participants who do not meet all criteria
-participants_metabolic_syndrome <- participants_metabolic_syndrome[!sapply(participants_metabolic_syndrome, function(x) any(is.na(x)))]
+#PHDI with diastolic high blood pressure
+ggplot(df, aes(PHDI_0506, Diastolic_mean)) + geom_point(alpha= .2) + geom_smooth()
 
-# Count participants who meet all criteria
-participants_with_metabolic_syndrome <- length(participants_metabolic_syndrome)
+#PHDI with low density lipoprotein LDL
+ggplot(df, aes(PHDI_0506, LBDLDL)) + geom_point(alpha= .2) + geom_smooth()
 
-# Display the count
-print(participants_with_metabolic_syndrome)
+# PHDI with the Glucose 
+ggplot(df, aes(PHDI_0506, LBXGLU)) + geom_point(alpha= .2) + geom_smooth()
+
+# PHDI with the fasting triglycerides
+ggplot(df, aes(PHDI_0506, LBXTR)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with HB1Ac
+ggplot(df, aes(PHDI_0506, LBXGH)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with age
+ggplot(df, aes(PHDI_0506, Age)) + geom_point(alpha= .2) + geom_smooth()
+```
+
+### Plot to see if PHDI and PHDI-US correlate
+
+```{r}
+df<- merge(df, PHDI_list_Changed[, c("SEQN", "PHDI_ALL")], by ="SEQN", all.y= T)
+
+ggplot(df, aes(x=PHDI_0506, y=PHDI_ALL)) +
+  geom_point(color="blue")  +
+  geom_smooth()
 
 
+cor.test(df$PHDI_0506, df$PHDI_ALL)
 
+hist(df$PHDI_0506)
+hist(df$PHDI_ALL)
+summary(is.na(df$PHDI_0506))
 
-
-
-
-
-
-# other version 
-filter_WaistC_F <- filter(Body_Measurements, BMXWAIST > 87 & Gender == 2)
-filter_WaistC_M <- filter(Body_Measurements, BMXWAIST > 101 & Gender ==1)
-filter_Syst_BP <- filter(Blood_Pressure, Systolic_mean > 129)
-filter_Diast_BP <- filter(Blood_Pressure, Diastolic_mean > 84)
-filter_LDL_F <- filter(TRYGL, LBDLDL < 50 & Gender ==2)
-filter_LDL_M <- filter(TRYGL, LBDLDL < 40 & Gender ==1)
-filter_Glucose <- filter(F_Glucose, LBXGLU > 99)
-filter_Trigly <- filter(TRYGL, LBXTR > 149)
-
-seqn_WaistC_F <- filter_WaistC_F$SEQN
-seqn_LDL_F <- filter_LDL_F$SEQN
-seqn_WaistC_M <- filter_WaistC_M$SEQN
-seqn_LDL_M <- filter_LDL_M$SEQN
-seqn_Syst_BP <- filter_Syst_BP$SEQN
-seqn_Diast_BP <- filter_Diast_BP$SEQN
-seqn_Glucose <- filter_Glucose$SEQN
-seqn_Trigly <- filter_Trigly$SEQN
-# Find common SEQN values for women
-common_seqn_women_Diast <- Reduce(intersect, list(seqn_WaistC_F, seqn_LDL_F, seqn_Diast_BP, seqn_Glucose, seqn_Trigly))
-
-common_seqn_women_Syst <- Reduce(intersect, list(seqn_WaistC_F, seqn_LDL_F, seqn_Syst_BP, seqn_Glucose, seqn_Trigly))
-# Find common SEQN values for men
-common_seqn_men_Diast <- Reduce(intersect, list(seqn_WaistC_M, seqn_LDL_M, seqn_Diast_BP, seqn_Glucose, seqn_Trigly))
-
-common_seqn_men_Syst <- Reduce(intersect, list(seqn_WaistC_M, seqn_LDL_M, seqn_Syst_BP, seqn_Glucose, seqn_Trigly))
-# Display the results
-participants_with_Metabolic_syndrome_women_Syst <- common_seqn_women_Syst
-participants_with_Metabolic_syndrome_women_Diast <- common_seqn_women_Diast
-participants_with_Metabolic_syndrome_men_Syst <- common_seqn_men_Syst
-participants_with_Metabolic_syndrome_men_Diast <- common_seqn_men_Diast
-
-
-print(participants_with_Metabolic_syndrome_women_Syst)
-print(participants_with_Metabolic_syndrome_women_Diast)
-print(participants_with_Metabolic_syndrome_men_Syst) #one person which has the Metabolic syndrome in men with these criteria
-print(participants_with_Metabolic_syndrome_men_Diast)
-
-##no one has the metabolic syndrome with these criteria
+ggplot(df, aes(LBXGLU, LBXGH)) + geom_point()
+summary(is.na(df$LBXGLU))
+summary(is.na(df$BMXWAIST))
+sum(is.na(Body_Measurements$BMXWAIST))
 ```

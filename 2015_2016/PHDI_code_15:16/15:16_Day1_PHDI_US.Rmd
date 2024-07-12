@@ -1371,3 +1371,49 @@ print(participants_with_Metabolic_syndrome_women_Diast)
 print(participants_with_Metabolic_syndrome_men_Syst) #one person which has the Metabolic syndrome in men with these criteria
 print(participants_with_Metabolic_syndrome_men_Diast)
 ```
+
+### Make a dataframe with the lab lists and PHDI combined
+
+```{r}
+PHDI_1516_df <- data.frame(
+  SEQN = merged_list$FPED$SEQN,
+  Gender = merged_list$FPED$RIAGENDR,
+  Age = merged_list$FPED$RIDAGEYR,
+  PHDI_1516 = PHDI_all_D1_Excess
+)
+
+df<- merge(PHDI_1516_df, Body_Measurements[, c("SEQN", "BMXWAIST")], by= "SEQN" )
+
+df <- merge(df, Blood_Pressure [, c("SEQN", "Systolic_mean", "Diastolic_mean")], by = "SEQN")
+df <- merge(df, TRYGL[, c("SEQN", "LBDLDL")], by= "SEQN" )
+df <- merge(df, F_Glucose[, c("SEQN", "LBXGLU")], by= "SEQN" )
+df <- merge(df, TRYGL[, c("SEQN", "LBXTR")], by= "SEQN" )
+str(df)
+```
+
+### Make some plots
+
+```{r}
+#PHDI with waist
+ggplot(df, aes(PHDI_1516, BMXWAIST)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with systolic high blood pressure
+ggplot(df, aes(PHDI_1516, Systolic_mean)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with diastolic high blood pressure
+ggplot(df, aes(PHDI_1516, Diastolic_mean)) + geom_point() + geom_smooth()
+
+#PHDI with low density lipoprotein LDL
+ggplot(df, aes(PHDI_1516, LBDLDL)) + geom_point(alpha= .2) + geom_smooth()
+
+# PHDI with the Glucose 
+ggplot(df, aes(PHDI_1516, LBXGLU)) + geom_point(alpha= .2) + geom_smooth()
+
+# PHDI with the fasting triglycerides
+ggplot(df, aes(PHDI_1516, LBXTR)) + geom_point(alpha= .2) + geom_smooth()
+
+ggplot(df, aes(LBXTR, LBDLDL)) + geom_point(alpha= .2) + geom_smooth()
+
+summary(is.na(Blood_Pressure$BPAEN1))
+summary(is.na(F_Glucose$LBXGLU))
+```

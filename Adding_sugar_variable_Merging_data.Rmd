@@ -282,6 +282,8 @@ str(merged_list$FPED)
 
 ### Cups into grams
 
+To convert the cups into grams for several variables, an excel list was created. In there, the different foods / drinks were added up in the respective variable, and the mean was taken to get an estimation of the conversion factor. The lists provided on this [website](https://www.ars.usda.gov/northeast-area/beltsville-md-bhnrc/beltsville-human-nutrition-research-center/food-surveys-research-group/docs/fped-methodology/), show which foods / drinks were scored in what variable.
+
 ```{r}
 
 #DR1T_F_CITMLB  = intact fruits of citurs melons and berries
@@ -1126,6 +1128,7 @@ PHDI_all_D1_Excess = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_N
 summary(PHDI_all_D1)
 summary(PHDI_all_D1_Excess)
 summary(PHDI_Added_Sugars)
+hist(PHDI_Added_Sugars)
 hist(PHDI_all_D1)
 hist(PHDI_all_D1_Excess)
 ```
@@ -1138,6 +1141,45 @@ subsetted_list <- merged_list$FPED[1:5, ]
 
 # Print the resulting list of data frames
 print(subsetted_list)
+
+#add the PHDI min and max
+PHDI_MIN = 0
+    PHDI_MAX = 10
+    PHDI_MAX_2 = 5 #ratio components
+
+PHDI_Nuts_min = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Nuts_max = 0.025 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Legumes_min = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Legumes_max = 0.085 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Fruits_min = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Fruits_max = 0.101 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_NS_Veg_min = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_NS_Veg_max = 0.152* subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_W_Grains_min = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_W_Grains_max = 0.25 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_min1 = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_min2 = 0.051 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Seaf_S_max = 0.014 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_min1 = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_min2 = 0.051 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_ST_Veg_max = 0.025 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_min1 = 0 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_min2 = 0.253 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Dairy_max = 0.126 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_min1 = 0* subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_min2 = 0.04* subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_UNS_Oils_max = 0.02 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Eggs_min = 0.013 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Eggs_max = 0.007 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_RP_Meat_min = 0.014 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_RP_Meat_max = 0.007 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Poultry_min = 0.29 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Poultry_max = 0.015 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Sat_Fats_min = 0.006 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Sat_Fats_max = 0.003 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Add_Sugars_min = 0.016 * subsetted_list$DR1T_Total_Grams_Per_Day
+    PHDI_Add_Sugars_max = 0.008 * subsetted_list$DR1T_Total_Grams_Per_Day    
+
 
 #Insert the PHDI code and change merged_list for subsetted_list
   PHDI_SUBSETTED_Nuts_and_Peanuts = SCORE_ADEQUACY(subsetted_list$DR1T_PF_NUTSDS_GRAM, PHDI_Nuts_min, PHDI_Nuts_max, PHDI_MIN, PHDI_MAX)
@@ -1165,9 +1207,7 @@ excess_N_SUB <- ifelse(subsetted_list$DR1T_PF_NUTSDS_GRAM > PHDI_Nuts_max &
                  subsetted_list$DR1T_Total_Seafood_Sub < PHDI_Seaf_S_max,
                  subsetted_list$DR1T_PF_NUTSDS_GRAM - PHDI_Nuts_max, 0)
 
-subsetted_list$DR1T_Total_Seafood_Sub_new <- ifelse(excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub >=
-                                                        PHDI_Seaf_S_max, PHDI_Seaf_S_max,
-                                                      excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub)
+subsetted_list$DR1T_Total_Seafood_Sub_new <- ifelse(excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub >=PHDI_Seaf_S_max, PHDI_Seaf_S_max, excess_N_SUB +subsetted_list$DR1T_Total_Seafood_Sub)
 
 PHDI_Seafood_Sub_new = SCORE_OPTIMUM(subsetted_list$DR1T_Total_Seafood_Sub_new, PHDI_Seaf_S_min1, PHDI_Seaf_S_min2, PHDI_Seaf_S_max, PHDI_MIN, PHDI_MAX)
 summary(PHDI_Seafood_Sub_new)
@@ -1203,5 +1243,19 @@ PHDI_SUBSETTED_all_D1
 ## Basic descriptions of PHDI
 
 ```{r}
+library(pastecs)
+library(e1071)
+summary(PHDI_all_D1_Excess)
+hist(PHDI_all_D1_Excess)
+round(stat.desc(PHDI_all_D1_Excess, norm=F), 2)
+skewness(PHDI_all_D1_Excess, na.rm = T)
+qqnorm(PHDI_all_D1_Excess)
+qqline(PHDI_all_D1_Excess, col="blue")
+ggpairs(PHDI_all_D1_Excess)
 
+
+
+model_chol <- lm(PHDI_all_D1_Excess ~ merged_list$LAB_Cholesterol$LBDTCSI)
+length(PHDI_all_D1_Excess)
+length(merged_list$LAB_Cholesterol$LBDTCSI)
 ```

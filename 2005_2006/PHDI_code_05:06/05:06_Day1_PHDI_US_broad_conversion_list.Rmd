@@ -92,13 +92,13 @@ str(merged_list$FPED_IND)
 
 \--\> convert the different equivalents into grams to score the PHDI
 
-+------------+----------------------------------------+
-| 1 oz       | 28.349523125 g                         |
-|            |                                        |
-| 1 CUP      | dependent on the consistency / density |
-|            |                                        |
-| 1 tbsp     | dependent on the consistency / density |
-+------------+----------------------------------------+
++--------+----------------------------------------+
+| 1 oz   | 28.349523125 g                         |
+|        |                                        |
+| 1 CUP  | dependent on the consistency / density |
+|        |                                        |
+| 1 tbsp | dependent on the consistency / density |
++--------+----------------------------------------+
 
 **FPED_IND** = for every individual participant, there is an entry for every food component they have eaten that day
 
@@ -1241,9 +1241,4 @@ qqnorm(PHDI_all_D1_Excess)
 qqline(PHDI_all_D1_Excess, col="blue")
 ggpairs(PHDI_all_D1_Excess)
 
-
-
-model_chol <- lm(PHDI_all_D1_Excess ~ merged_list$LAB_Cholesterol$LBDTCSI)
-length(PHDI_all_D1_Excess)
-length(merged_list$LAB_Cholesterol$LBDTCSI)
 ```

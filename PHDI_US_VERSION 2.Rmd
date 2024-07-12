@@ -178,6 +178,7 @@ PHDI_V2 = function(SERV_DATA, RESPONDENTID, GENDER, TOTALKCAL_PHDI, WGRAIN_SERV_
 ```
 
 ```{r}
+save.image(file = "workspace_backup.RData")
 
 load("~/Desktop/Master_thesis/NHANES_combined_GitHub/NHANES_20072008.rda")
 ```

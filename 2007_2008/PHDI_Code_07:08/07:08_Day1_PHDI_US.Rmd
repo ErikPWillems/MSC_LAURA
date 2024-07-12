@@ -28,10 +28,11 @@ load("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/NHANES_comb
 ### Loading the laboratory dataset from 2005/2006 into R from the NHANES website
 
 ```{r}
-# TRYGL <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/TRYGL_LDL_APO.XPT")
-# CHOL <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/TOT_CHOLESTEROL.XPT")
-# Food_code <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Food_Code.XPT")
-# Modification_code <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2005_2006/Modification_Code.XPT")
+Blood_Pressure <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2007_2008/Examination_data_07:08/BPX_E.XPT")
+Body_Measurements <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2007_2008/Examination_data_07:08/BMX_E.XPT")
+F_Glucose <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2007_2008/Lab_data_07:08/GLU_E.XPT")
+TRYGL <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2007_2008/Lab_data_07:08/TRIGLY_E.XPT")
+HB1AC <- read.xport("~/Documents/Laura/UNI/Master/Master thesis/R_Scripts/MSC_LAURA/2007_2008/Lab_data_07:08/GHB_E.XPT")
 ```
 
 ### Merging the two datasets and renaming them
@@ -1071,7 +1072,7 @@ PHDI_all_D1_Excess = PHDI_Nuts_and_Peanuts + PHDI_Legumes + PHDI_Fruits + PHDI_N
 ```{r}
 summary(PHDI_all_D1)
 summary(PHDI_all_D1_Excess)
-summary(PHDI_Added_Sugars)
+sum(is.na(PHDI_all_D1_Excess))
 hist(PHDI_Added_Sugars)
 hist(PHDI_all_D1)
 hist(PHDI_all_D1_Excess)
@@ -1370,3 +1371,96 @@ participants_with_Metabolic_syndrome_men <- common_seqn_men
 print(participants_with_Metabolic_syndrome_women)
 print(participants_with_Metabolic_syndrome_men)
 ```
+
+## Check Correlation between PHDI-US and PHDI
+
+```{r}
+PHDI_0708 <- data.frame(
+  SEQN = merged_list$FPED$SEQN,
+  Gender = merged_list$FPED$RIAGENDR,
+  Age = merged_list$FPED$RIDAGEYR,
+  PHDI_0708 = PHDI_all_D1_Excess)
+df<- merge(PHDI_0708, PHDI_list_Changed[, c("SEQN", "PHDI_ALL")], by ="SEQN", all.y= T)
+
+ggplot(df, aes(x=PHDI_0708, y=PHDI_ALL)) +
+  geom_point(color="blue")  +
+  geom_smooth() +
+  geom_abline(intercept= 0, slope= 1, col= 2)
+
+hist(df$PHDI_0708)
+hist(df$PHDI_ALL)
+cor.test(df$PHDI_0708, df$PHDI_ALL)
+```
+
+### Adding the Lab data
+
+```{r}
+#taking the mean of the 2. and 3. measurement
+Blood_Pressure <- Blood_Pressure %>%
+  mutate(Systolic_mean = (Blood_Pressure$BPXSY2 + Blood_Pressure$BPXSY3)/2)
+#taking the mean of the 2. and 3. measurement
+Blood_Pressure <- Blood_Pressure %>%
+  mutate(Diastolic_mean = (Blood_Pressure$BPXDI2 + Blood_Pressure$BPXDI3)/2)
+
+#adding the gender column to the Trygliceride data
+for (i in seq_along(TRYGL)) {
+  matching_indices <- match(TRYGL$SEQN, merged_list$FPED$SEQN, nomatch = 0)
+  valid_matches <- matching_indices != 0
+  TRYGL$Gender <- NA
+  TRYGL$Gender[valid_matches] <- merged_list$FPED$RIAGENDR[matching_indices[valid_matches]]
+}
+```
+
+### Making a data frame with all the Lab data and the PHDI
+
+```{r}
+df<- merge(df, Body_Measurements[, c("SEQN", "BMXWAIST")], by= "SEQN" )
+df <- merge(df, Blood_Pressure [, c("SEQN", "Systolic_mean", "Diastolic_mean")], by = "SEQN")
+df <- merge(df, TRYGL[, c("SEQN", "LBDLDL")], by= "SEQN" )
+df <- merge(df, F_Glucose[, c("SEQN", "LBXGLU")], by= "SEQN" )
+df <- merge(df, TRYGL[, c("SEQN", "LBXTR")], by= "SEQN" )
+df <- merge(df, HB1AC[, c("SEQN", "LBXGH")], by= "SEQN" )
+```
+
+### Are there problems with the merging?
+
+```{r}
+sum(is.na(Body_Measurements$BMXWAIST))
+length(Body_Measurements$BMXWAIST)
+summary(Body_Measurements$BMXWAIST)
+sum(is.na(df$BMXWAIST))
+length(df$BMXWAIST)
+```
+
+### Plots to see if lab data variables correlate with PHDI
+
+```{r}
+#PHDI with waist
+ggplot(df, aes(PHDI_07_08_D1, BMXWAIST)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with systolic high blood pressure
+ggplot(df, aes(PHDI_07_08_D1, Systolic_mean)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with diastolic high blood pressure
+ggplot(df, aes(PHDI_07_08_D1, Diastolic_mean)) + geom_point(alpha= .2) + geom_smooth()
+
+#PHDI with low density lipoprotein LDL
+ggplot(df, aes(PHDI_07_08_D1, LBDLDL)) + geom_point(alpha= .2) + geom_smooth()
+
+# PHDI with the Glucose 
+ggplot(df, aes(PHDI_07_08_D1, LBXGLU)) + geom_point(alpha= .2) + geom_smooth()
+
+# PHDI with the fasting triglycerides
+ggplot(df, aes(PHDI_07_08_D1, LBXTR)) + geom_point(alpha= .2) + geom_smooth()
+cor.test(df$PHDI_07_08_D1, df$LBXTR)
+
+#PHDI with HB1Ac
+ggplot(df, aes(PHDI_07_08_D1, LBXGH)) + geom_point(alpha= .2) + geom_smooth()
+cor.test(df$PHDI_07_08_D1, df$LBXGH)
+
+#PHDI with age
+ggplot(df, aes(PHDI_07_08_D1, Age)) + geom_point(alpha= .2) + geom_smooth()
+cor.test(df$PHDI_07_08_D1, df$Age)
+```
+
+### 
